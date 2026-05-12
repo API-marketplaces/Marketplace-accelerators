@@ -58,7 +58,7 @@ jobs:
           action: "upload"
           app_location: "src"
           api_location: ""
-          output_location: "Monetize Mate Main Frontend/.next"
+          output_location: "/"
           skip_app_build: true
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
