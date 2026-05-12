@@ -1,0 +1,16 @@
+# Ignore uploads directory containing user-uploaded files
+uploads/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+
+# VSCode
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

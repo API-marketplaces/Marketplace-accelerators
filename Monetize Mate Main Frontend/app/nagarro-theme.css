@@ -1,0 +1,83 @@
+/* ── Nagarro Theme — Global Variables ── */
+:root {
+  --bg-primary: #060E1E;
+  --bg-secondary: #0A1628;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-card-hover: rgba(0, 229, 192, 0.06);
+  --accent: #00E5C0;
+  --accent-secondary: #1ABFA3;
+  --accent-gradient: linear-gradient(135deg, #00E5C0, #1ABFA3);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-muted: rgba(255, 255, 255, 0.35);
+  --border: rgba(0, 229, 192, 0.1);
+  --border-hover: rgba(0, 229, 192, 0.35);
+}
+
+/* Override the light theme defaults */
+body {
+  background: linear-gradient(135deg, #060E1E 0%, #0A1628 40%, #0D2035 70%, #071420 100%) !important;
+  color: #ffffff !important;
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+  min-height: 100vh;
+}
+
+/* Cards */
+.card, [class*="card"] {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(0, 229, 192, 0.12) !important;
+  color: #ffffff !important;
+}
+
+/* Buttons — primary */
+button[class*="bg-blue"], 
+button[class*="blue-600"],
+button[class*="blue-700"] {
+  background: linear-gradient(135deg, #00E5C0, #1ABFA3) !important;
+  color: #060E1E !important;
+  border: none !important;
+}
+
+/* Text overrides */
+[class*="text-blue-900"],
+[class*="text-blue-800"],
+[class*="text-blue-700"] {
+  color: #ffffff !important;
+}
+
+[class*="text-blue-600"],
+[class*="text-blue-500"] {
+  color: #00E5C0 !important;
+}
+
+/* Backgrounds */
+[class*="bg-blue-50"],
+[class*="bg-blue-100"],
+[class*="from-blue-50"],
+[class*="to-indigo-100"] {
+  background: transparent !important;
+}
+
+/* Tab active state */
+[data-state="active"] {
+  background: rgba(0, 229, 192, 0.15) !important;
+  color: #00E5C0 !important;
+  border-bottom: 2px solid #00E5C0 !important;
+}
+
+/* Input fields */
+input, textarea, select {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(0, 229, 192, 0.2) !important;
+  color: #ffffff !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #060E1E; }
+::-webkit-scrollbar-thumb { background: rgba(0, 229, 192, 0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 229, 192, 0.6); }
