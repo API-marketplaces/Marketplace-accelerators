@@ -51,12 +51,21 @@ export default function PredictionResultPage() {
     }
   }, [fileId]);
 
-  const getSeverityBadge = (severity: Anomaly['severity']) => {
+  const getSeverityBadge = (
+    severity: 'High' | 'Medium' | 'Low'
+  ): 'destructive' | 'secondary' | 'outline' | 'default' => {
     switch (severity) {
-      case 'High': return 'destructive';
-      case 'Medium': return 'secondary';
-      case 'Low': return 'outline';
-      default: return 'default';
+      case 'High':
+        return 'destructive';
+  
+      case 'Medium':
+        return 'secondary';
+  
+      case 'Low':
+        return 'outline';
+  
+      default:
+        return 'default';
     }
   };
 
