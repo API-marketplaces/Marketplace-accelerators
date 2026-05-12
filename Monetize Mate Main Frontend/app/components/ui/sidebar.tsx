@@ -401,11 +401,14 @@ const sidebarMenuButtonVariants = cva("..."); // Variant details hidden for brev
 
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentPropsWithoutRef<"button"> & {
+  Omit<React.ComponentPropsWithoutRef<"button">, "ref"> & {
     asChild?: boolean;
-    isActive?: boolean; 
+    isActive?: boolean;
+    variant?: "default" | "outline";
+    size?: "default" | "sm" | "lg";
     tooltip?: string | React.ComponentProps<typeof TooltipContent>;
-  } & VariantProps<typeof sidebarMenuButtonVariants>
+    className?: string;
+  }
 >(({ asChild, isActive, variant, size, tooltip, className, ...props }, ref) => {
   const Comp = asChild ? Slot : "button";
   const { isMobile, state } = useSidebar();
