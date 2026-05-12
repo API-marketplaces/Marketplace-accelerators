@@ -397,7 +397,36 @@ const SidebarMenuItem = React.forwardRef<
 ));
 SidebarMenuItem.displayName = "SidebarMenuItem";
 
-const sidebarMenuButtonVariants = cva("..."); // Variant details hidden for brevity
+// const sidebarMenuButtonVariants = cva("..."); // Variant details hidden for brevity
+const sidebarMenuButtonVariants = cva(
+  "flex w-full items-center gap-2 overflow-hidden rounded-md px-2 py-1 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[collapsible=icon]/sidebar-wrapper:justify-center",
+  {
+    variants: {
+      variant: {
+        default:
+          "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        outline:
+          "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+      },
+      size: {
+        default: "h-8 text-sm",
+        sm: "h-7 text-xs",
+        lg: "h-12 text-sm group-has-data-[collapsible=icon]/sidebar-wrapper:p-0!",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+type SidebarMenuButtonProps =
+  React.ComponentPropsWithoutRef<"button"> &
+    VariantProps<typeof sidebarMenuButtonVariants> & {
+      asChild?: boolean;
+      isActive?: boolean;
+      tooltip?: string | React.ComponentProps<typeof TooltipContent>;
+    };
 
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
