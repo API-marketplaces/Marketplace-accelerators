@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { Suspense, useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Send, Bot, User, Sparkles, Database, RefreshCw, X } from "lucide-react";
 
@@ -9,7 +9,7 @@ interface Message {
   timestamp: Date;
 }
 
-export default function ConciergePage() {
+function ConciergePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fileId = searchParams.get("fileId");
@@ -305,4 +305,11 @@ export default function ConciergePage() {
       </div>
     </div>
   );
+}
+export default function ConciergePage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#060E1E',display:'flex',alignItems:'center',justifyContent:'center',color:'#00E5C0'}}>Loading…</div>}>
+      <ConciergePageInner />
+    </Suspense>
+  )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -28,7 +28,7 @@ interface Recommendation {
     bgColor: string;
 }
 
-export default function RecommendationsPage() {
+function RecommendationsPageInner() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -179,4 +179,11 @@ export default function RecommendationsPage() {
             </div>
         </div>
     );
+}
+export default function RecommendationsPage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#060E1E',display:'flex',alignItems:'center',justifyContent:'center',color:'#00E5C0'}}>Loading…</div>}>
+      <RecommendationsPageInner />
+    </Suspense>
+  )
 }

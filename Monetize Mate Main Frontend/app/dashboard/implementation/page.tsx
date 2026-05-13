@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -68,7 +68,7 @@ const implementationPhases = [
     }
 ];
 
-export default function ImplementationPage() {
+function ImplementationPageInner() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [strategy, setStrategy] = useState<Strategy | null>(null);
@@ -148,4 +148,11 @@ export default function ImplementationPage() {
             </div>
         </div>
     );
+}
+export default function ImplementationPage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#060E1E',display:'flex',alignItems:'center',justifyContent:'center',color:'#00E5C0'}}>Loading…</div>}>
+      <ImplementationPageInner />
+    </Suspense>
+  )
 }

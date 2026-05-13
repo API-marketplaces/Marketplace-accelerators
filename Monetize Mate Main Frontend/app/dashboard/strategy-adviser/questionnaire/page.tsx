@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "../../../components/ui/button";
 import { ArrowLeft, MessageSquare } from "lucide-react";
@@ -12,7 +12,7 @@ import { useAuth } from "@/app/hooks/useAuth";
 
 type QuestionnaireFlowType = 'questionnaire' | 'analyzing' | 'generating';
 
-export default function QuestionnairePage() {
+function QuestionnairePageInner() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { authenticated, loading } = useAuth();
@@ -134,4 +134,11 @@ export default function QuestionnairePage() {
     }
 
     return null;
+}
+export default function QuestionnairePage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#060E1E',display:'flex',alignItems:'center',justifyContent:'center',color:'#00E5C0'}}>Loading…</div>}>
+      <QuestionnairePageInner />
+    </Suspense>
+  )
 }
