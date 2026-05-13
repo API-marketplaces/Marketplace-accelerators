@@ -1,5 +1,5 @@
-import { DataAttribute } from "../../types/prediction";
-import { UploadedFile } from "../../types/UploadedFile";
+import { DataAttribute } from "../../../types/prediction";
+import { UploadedFile } from "../../../types/UploadedFile";
 
 export const calculateModelAccuracy = (
   modelId: string, 
