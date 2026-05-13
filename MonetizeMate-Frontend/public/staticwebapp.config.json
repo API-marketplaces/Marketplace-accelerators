@@ -2,24 +2,58 @@
   "platform": {
     "apiRuntime": "node:20"
   },
+  "trailingSlash": "never",
   "routes": [
     {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/_next/static/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      },
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/_next/*",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/login",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/signup",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/dashboard/*",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/*",
+      "allowedRoles": ["anonymous"]
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html",
+    "rewrite": "/",
     "exclude": [
       "/api/*",
       "/_next/*",
-      "/static/*",
-      "/*.css",
-      "/*.js",
+      "/*.ico",
       "/*.png",
       "/*.jpg",
       "/*.svg",
-      "/*.ico"
+      "/*.json",
+      "/*.css",
+      "/*.js"
     ]
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/",
+      "statusCode": 200
+    }
   }
 }
