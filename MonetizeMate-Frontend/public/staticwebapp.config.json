@@ -28,6 +28,10 @@
       "allowedRoles": ["anonymous"]
     },
     {
+      "route": "/dashboard",
+      "allowedRoles": ["anonymous"]
+    },
+    {
       "route": "/dashboard/*",
       "allowedRoles": ["anonymous"]
     },
@@ -37,7 +41,7 @@
     }
   ],
   "navigationFallback": {
-    "rewrite": "/",
+    "rewrite": "/index.html",
     "exclude": [
       "/api/*",
       "/_next/*",
@@ -52,7 +56,7 @@
   },
   "responseOverrides": {
     "404": {
-      "rewrite": "/",
+      "rewrite": "/index.html",
       "statusCode": 200
     }
   }
