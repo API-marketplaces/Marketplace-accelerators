@@ -51,21 +51,12 @@ export default function PredictionResultPage() {
     }
   }, [fileId]);
 
-  const getSeverityBadge = (
-    severity: 'High' | 'Medium' | 'Low'
-  ): 'destructive' | 'secondary' | 'outline' | 'default' => {
+  const getSeverityBadge = (severity: Anomaly['severity']) => {
     switch (severity) {
-      case 'High':
-        return 'destructive';
-  
-      case 'Medium':
-        return 'secondary';
-  
-      case 'Low':
-        return 'outline';
-  
-      default:
-        return 'default';
+      case 'High': return 'destructive';
+      case 'Medium': return 'secondary';
+      case 'Low': return 'outline';
+      default: return 'default';
     }
   };
 
@@ -120,7 +111,11 @@ export default function PredictionResultPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <AnomalyTable anomalies={data.anomalies} />
+              <AnomalyTable anomalies={[
+                ...(data.anomalies?.request_spike ?? []),
+                ...(data.anomalies?.latency_spike ?? []),
+                ...(data.anomalies?.resource_spike ?? []),
+              ]} />
             </CardContent>
           </Card>
 
