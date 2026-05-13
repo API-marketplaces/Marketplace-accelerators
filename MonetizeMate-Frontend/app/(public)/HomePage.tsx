@@ -160,7 +160,7 @@ export default function HomePage() {
           <p style={{ fontSize: '17px', lineHeight: '1.7', color: 'rgba(255,255,255,0.55)', marginBottom: '40px', maxWidth: '480px' }}>Leverage AI to develop personalized monetization strategies, analyze API performance, and predict revenue growth with comprehensive business intelligence tools.</p>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <Link href="/signup" style={{ textDecoration: 'none' }}>
-              <button style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '14px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 0 40px rgba(0,229,192,0.25)' }}>Start Free Analysis →</button>
+              <button type='button' style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '14px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 0 40px rgba(0,229,192,0.25)' }}>Start Free Analysis →</button>
             </Link>
             <Link href="/login" style={{ textDecoration: 'none' }}>
               <button style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', padding: '14px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: '500', cursor: 'pointer' }}>Sign In</button>
