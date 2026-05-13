@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
@@ -8,10 +9,8 @@ export default function HomePage() {
   const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [showDropdown, setShowDropdown] = useState(false)
+  const { user, loading: authLoading, logout } = useAuth()
 
-  const { user, authenticated, loading: authLoading, logout } = useAuth()
-
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = () => setShowDropdown(false)
     document.addEventListener('click', handler)
@@ -24,27 +23,16 @@ export default function HomePage() {
     router.push('/')
   }
 
-  /**
-   * Build a 2-letter avatar from the user's name or email.
-   * - "John Doe"  → "JD"
-   * - "Alice"     → "AL"  (first two letters when there's no space)
-   * - email only  → first two chars of the local-part, uppercased
-   */
   const getInitials = (email?: string, name?: string): string => {
     if (name && name.trim()) {
       const parts = name.trim().split(/\s+/)
-      if (parts.length >= 2) {
-        // First letter of first name + first letter of last name
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      }
-      // Single-word name → first two letters
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
       return parts[0].slice(0, 2).toUpperCase()
     }
     if (email) return email.slice(0, 2).toUpperCase()
     return 'U'
   }
 
-  // Animated background
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -86,55 +74,19 @@ export default function HomePage() {
   }, [])
 
   const features = [
-    {
-      icon: '⬡',
-      title: 'Comprehensive API Analytics',
-      desc: 'Deep dive into your API usage with 6-tab dashboard — Overview, Analysis, Temporal, Clients, Distribution, and Rankings with real-time time filtering.',
-      tags: ['Real-time', '6 Views', 'Time Filter'],
-      route: '/dashboard/upload?decisionMetrics=analytics',
-      cta: 'View Analytics →',
-    },
-    {
-      icon: '◈',
-      title: 'ML Prediction Models',
-      desc: 'IsolationForest anomaly detection, LinearRegression demand forecasting, quota monitoring, and user behaviour segmentation powered by scikit-learn.',
-      tags: ['scikit-learn', 'Forecasting', 'Anomaly'],
-      route: '/dashboard/upload?decisionMetrics=prediction',
-      cta: 'Run Predictions →',
-    },
-    {
-      icon: '◎',
-      title: 'AI-Powered Strategy Advisor',
-      desc: 'Answer a questionnaire or upload your data to receive personalized API monetization strategy recommendations — Freemium, Tiered, or Pay-per-use.',
-      tags: ['Freemium', 'Tiered', 'Pay-per-use'],
-      route: '/dashboard/strategy-adviser',
-      cta: 'Get Strategy →',
-    },
+    { icon: '⬡', title: 'Comprehensive API Analytics', desc: 'Deep dive into your API usage with 6-tab dashboard — Overview, Analysis, Temporal, Clients, Distribution, and Rankings with real-time time filtering.', tags: ['Real-time', '6 Views', 'Time Filter'], route: '/dashboard/upload?decisionMetrics=analytics', cta: 'View Analytics →' },
+    { icon: '◈', title: 'ML Prediction Models', desc: 'IsolationForest anomaly detection, LinearRegression demand forecasting, quota monitoring, and user behaviour segmentation powered by scikit-learn.', tags: ['scikit-learn', 'Forecasting', 'Anomaly'], route: '/dashboard/upload?decisionMetrics=prediction', cta: 'Run Predictions →' },
+    { icon: '◎', title: 'AI-Powered Strategy Advisor', desc: 'Answer a questionnaire or upload your data to receive personalized API monetization strategy recommendations — Freemium, Tiered, or Pay-per-use.', tags: ['Freemium', 'Tiered', 'Pay-per-use'], route: '/dashboard/strategy-adviser', cta: 'Get Strategy →' },
   ]
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #060E1E 0%, #0A1628 40%, #0D2035 70%, #071420 100%)',
-      fontFamily: "'DM Sans', system-ui, sans-serif",
-      color: '#fff',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #060E1E 0%, #0A1628 40%, #0D2035 70%, #071420 100%)', fontFamily: "'DM Sans', system-ui, sans-serif", color: '#fff', position: 'relative', overflow: 'hidden' }}>
       <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', top: '-200px', right: '-200px', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,192,0.08) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: '-150px', left: '-100px', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(26,191,163,0.07) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
 
-      {/* ── NAV — logo left, Nagarro right, nothing else ── */}
-      <nav style={{
-        position: 'relative', zIndex: 10,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 48px', height: '68px',
-        borderBottom: '1px solid rgba(0,229,192,0.1)',
-        backdropFilter: 'blur(12px)',
-        background: 'rgba(6,14,30,0.7)',
-      }}>
-        {/* LEFT — Portal name */}
+      {/* NAV */}
+      <nav style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', height: '68px', borderBottom: '1px solid rgba(0,229,192,0.1)', backdropFilter: 'blur(12px)', background: 'rgba(6,14,30,0.7)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '38px', height: '38px', background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px', fontWeight: '800', color: '#060E1E' }}>M</div>
           <div>
@@ -142,78 +94,39 @@ export default function HomePage() {
             <div style={{ fontSize: '10px', fontWeight: '500', color: 'rgba(0,229,192,0.65)', letterSpacing: '0.3px', lineHeight: '1' }}>AI-Powered API Monetization</div>
           </div>
         </div>
-        {/* RIGHT — Nagarro logo only */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '1px', height: '36px', background: 'rgba(0,229,192,0.15)' }} />
           <img src="/nagarro-logo.png" alt="Nagarro" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
         </div>
       </nav>
 
-      {/* ── AUTH SUB-BAR — below navbar, right-aligned ── */}
-      <div style={{
-        position: 'relative', zIndex: 10,
-        display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-        padding: '8px 48px', gap: '10px',
-        borderBottom: '1px solid rgba(0,229,192,0.06)',
-        background: 'rgba(6,14,30,0.5)',
-        backdropFilter: 'blur(8px)',
-      }}>
+      {/* AUTH SUB-BAR */}
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '8px 48px', gap: '10px', borderBottom: '1px solid rgba(0,229,192,0.06)', background: 'rgba(6,14,30,0.5)', backdropFilter: 'blur(8px)' }}>
         {authLoading ? (
           <div style={{ height: '30px', width: '120px', background: 'rgba(0,229,192,0.08)', borderRadius: '8px' }} />
         ) : user ? (
-          /* ── LOGGED IN — avatar + name + dropdown ── */
           <div style={{ position: 'relative' }}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowDropdown(v => !v) }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                background: 'rgba(0,229,192,0.08)',
-                border: '1px solid rgba(0,229,192,0.25)',
-                borderRadius: '20px', padding: '5px 14px 5px 5px',
-                cursor: 'pointer', color: '#fff',
-              }}
-            >
-              <div style={{
-                width: '28px', height: '28px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '11px', fontWeight: '800', color: '#060E1E', flexShrink: 0,
-              }}>
-                {getInitials(user.email, user.name)}
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: '500', color: '#fff', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user.name || user.email?.split('@')[0]}
-              </span>
+            <button onClick={(e) => { e.stopPropagation(); setShowDropdown(v => !v) }} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,229,192,0.08)', border: '1px solid rgba(0,229,192,0.25)', borderRadius: '20px', padding: '5px 14px 5px 5px', cursor: 'pointer', color: '#fff' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', color: '#060E1E', flexShrink: 0 }}>{getInitials(user.email, user.name)}</div>
+              <span style={{ fontSize: '13px', fontWeight: '500', color: '#fff', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name || user.email?.split('@')[0]}</span>
               <span style={{ fontSize: '10px', color: 'rgba(0,229,192,0.7)' }}>▾</span>
             </button>
-
             {showDropdown && (
-              <div style={{
-                position: 'absolute', top: '42px', right: '0',
-                background: '#0A1628', border: '1px solid rgba(0,229,192,0.2)',
-                borderRadius: '12px', padding: '8px',
-                minWidth: '190px', zIndex: 100,
-                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-              }}>
+              <div style={{ position: 'absolute', top: '42px', right: '0', background: '#0A1628', border: '1px solid rgba(0,229,192,0.2)', borderRadius: '12px', padding: '8px', minWidth: '190px', zIndex: 100, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
                 <div style={{ padding: '8px 12px 12px', borderBottom: '1px solid rgba(0,229,192,0.1)', marginBottom: '8px' }}>
                   <div style={{ fontSize: '13px', fontWeight: '600', color: '#fff' }}>{user.name || 'User'}</div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{user.email}</div>
                 </div>
-                {[
-                  { label: '📊 Dashboard', path: '/dashboard/upload' },
-                  { label: '🎯 Strategy Advisor', path: '/dashboard/strategy-adviser' },
-                ].map(item => (
-                  <button key={item.path}
-                    onClick={() => { setShowDropdown(false); router.push(item.path) }}
-                    style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,229,192,0.08)'; e.currentTarget.style.color = '#00E5C0' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
-                  >{item.label}</button>
+                {[{ label: '📊 Dashboard', path: '/dashboard/upload' }, { label: '🎯 Strategy Advisor', path: '/dashboard/strategy-adviser' }].map(item => (
+                  <Link key={item.path} href={item.path} style={{ textDecoration: 'none', display: 'block' }}>
+                    <button onClick={() => setShowDropdown(false)} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,229,192,0.08)'; e.currentTarget.style.color = '#00E5C0' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+                    >{item.label}</button>
+                  </Link>
                 ))}
                 <div style={{ borderTop: '1px solid rgba(0,229,192,0.1)', marginTop: '8px', paddingTop: '8px' }} />
-                <button
-                  onClick={handleLogout}
-                  style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: '#f87171', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                <button onClick={handleLogout} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: '#f87171', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                 >🚪 Logout</button>
@@ -221,56 +134,38 @@ export default function HomePage() {
             )}
           </div>
         ) : (
-          /* ── NOT LOGGED IN — Sign In + Get Started ── */
           <>
-            <button
-              onClick={() => router.push('/login')}
-              style={{ background: 'transparent', border: '1px solid rgba(0,229,192,0.3)', color: '#00E5C0', padding: '6px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,229,192,0.08)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >Sign In</button>
-            <button
-              onClick={() => router.push('/signup')}
-              style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '6px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
-            >Get Started</button>
+            <Link href="/login" style={{ textDecoration: 'none' }}>
+              <button style={{ background: 'transparent', border: '1px solid rgba(0,229,192,0.3)', color: '#00E5C0', padding: '6px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>Sign In</button>
+            </Link>
+            <Link href="/signup" style={{ textDecoration: 'none' }}>
+              <button style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '6px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>Get Started</button>
+            </Link>
           </>
         )}
       </div>
 
-      {/* ── HERO ── */}
-      <section style={{
-        position: 'relative', zIndex: 5,
-        maxWidth: '1200px', margin: '0 auto',
-        padding: '80px 48px 80px',
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center',
-      }}>
+      {/* HERO */}
+      <section style={{ position: 'relative', zIndex: 5, maxWidth: '1200px', margin: '0 auto', padding: '80px 48px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(0,229,192,0.1)', border: '1px solid rgba(0,229,192,0.2)', borderRadius: '100px', padding: '6px 16px', marginBottom: '32px' }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00E5C0', animation: 'pulse 2s infinite' }} />
             <span style={{ fontSize: '12px', fontWeight: '600', color: '#00E5C0', letterSpacing: '0.5px' }}>AI-POWERED API MONETIZATION</span>
           </div>
-
           <h1 style={{ fontSize: '56px', fontWeight: '800', lineHeight: '1.08', letterSpacing: '-1.5px', marginBottom: '24px' }}>
             <span style={{ color: '#fff' }}>Transform Your</span><br />
             <span style={{ color: '#fff' }}>APIs Into</span><br />
             <span style={{ background: 'linear-gradient(90deg, #00E5C0, #1ABFA3)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Revenue Streams</span>
           </h1>
-
-          <p style={{ fontSize: '17px', lineHeight: '1.7', color: 'rgba(255,255,255,0.55)', marginBottom: '40px', maxWidth: '480px' }}>
-            Leverage AI to develop personalized monetization strategies, analyze API performance, and predict revenue growth with comprehensive business intelligence tools.
-          </p>
-
+          <p style={{ fontSize: '17px', lineHeight: '1.7', color: 'rgba(255,255,255,0.55)', marginBottom: '40px', maxWidth: '480px' }}>Leverage AI to develop personalized monetization strategies, analyze API performance, and predict revenue growth with comprehensive business intelligence tools.</p>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            {user ? (
-              <button onClick={() => router.push('/dashboard/upload')} style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '14px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 0 40px rgba(0,229,192,0.25)' }}>Go to Dashboard →</button>
-            ) : (
-              <>
-                <button onClick={() => router.push('/signup')} style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '14px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 0 40px rgba(0,229,192,0.25)' }}>Start Free Analysis →</button>
-                <button onClick={() => router.push('/login')} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', padding: '14px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: '500', cursor: 'pointer' }}>Sign In</button>
-              </>
-            )}
+            <Link href="/signup" style={{ textDecoration: 'none' }}>
+              <button style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '14px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 0 40px rgba(0,229,192,0.25)' }}>Start Free Analysis →</button>
+            </Link>
+            <Link href="/login" style={{ textDecoration: 'none' }}>
+              <button style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', padding: '14px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: '500', cursor: 'pointer' }}>Sign In</button>
+            </Link>
           </div>
-
           <div style={{ display: 'flex', gap: '32px', marginTop: '48px' }}>
             {[['864K+', 'API Calls Analyzed'], ['3', 'AI Features'], ['$0', 'Setup Cost']].map(([num, label]) => (
               <div key={label}>
@@ -280,8 +175,6 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-
-        {/* Right — Dashboard preview */}
         <div style={{ position: 'relative' }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(0,229,192,0.15)', borderRadius: '20px', padding: '28px', backdropFilter: 'blur(20px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -313,38 +206,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
+      {/* FEATURES */}
       <section style={{ position: 'relative', zIndex: 5, maxWidth: '1200px', margin: '0 auto', padding: '60px 48px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
           <div style={{ display: 'inline-block', fontSize: '11px', fontWeight: '700', letterSpacing: '2px', color: '#00E5C0', textTransform: 'uppercase', marginBottom: '16px' }}>Platform Capabilities</div>
           <h2 style={{ fontSize: '40px', fontWeight: '800', letterSpacing: '-1px', color: '#fff', marginBottom: '16px' }}>Complete Monetization Intelligence</h2>
           <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.45)', maxWidth: '500px', margin: '0 auto', lineHeight: '1.6' }}>Everything you need to optimize your API revenue in one powerful platform</p>
         </div>
-
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
           {features.map((f) => (
-            <div
-              key={f.title}
-              onClick={() => router.push(f.route)}
-              style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(0,229,192,0.1)', borderRadius: '20px', padding: '36px', cursor: 'pointer', transition: 'all 0.3s', display: 'flex', flexDirection: 'column' }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.background = 'rgba(0,229,192,0.06)'; el.style.borderColor = 'rgba(0,229,192,0.35)'; el.style.transform = 'translateY(-6px)'; el.style.boxShadow = '0 20px 60px rgba(0,229,192,0.1)' }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.background = 'rgba(255,255,255,0.025)'; el.style.borderColor = 'rgba(0,229,192,0.1)'; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none' }}
-            >
-              <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'rgba(0,229,192,0.1)', border: '1px solid rgba(0,229,192,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#00E5C0', marginBottom: '24px' }}>{f.icon}</div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#fff', marginBottom: '12px', lineHeight: '1.3' }}>{f.title}</h3>
-              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', marginBottom: '24px', flex: 1 }}>{f.desc}</p>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
-                {f.tags.map(tag => (
-                  <span key={tag} style={{ fontSize: '11px', fontWeight: '600', color: '#00E5C0', background: 'rgba(0,229,192,0.08)', border: '1px solid rgba(0,229,192,0.15)', borderRadius: '100px', padding: '3px 10px' }}>{tag}</span>
-                ))}
+            <Link key={f.title} href={f.route} style={{ textDecoration: 'none' }}>
+              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(0,229,192,0.1)', borderRadius: '20px', padding: '36px', cursor: 'pointer', transition: 'all 0.3s', display: 'flex', flexDirection: 'column', height: '100%' }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.background = 'rgba(0,229,192,0.06)'; el.style.borderColor = 'rgba(0,229,192,0.35)'; el.style.transform = 'translateY(-6px)'; el.style.boxShadow = '0 20px 60px rgba(0,229,192,0.1)' }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.background = 'rgba(255,255,255,0.025)'; el.style.borderColor = 'rgba(0,229,192,0.1)'; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none' }}
+              >
+                <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'rgba(0,229,192,0.1)', border: '1px solid rgba(0,229,192,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#00E5C0', marginBottom: '24px' }}>{f.icon}</div>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#fff', marginBottom: '12px', lineHeight: '1.3' }}>{f.title}</h3>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', marginBottom: '24px', flex: 1 }}>{f.desc}</p>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                  {f.tags.map(tag => (<span key={tag} style={{ fontSize: '11px', fontWeight: '600', color: '#00E5C0', background: 'rgba(0,229,192,0.08)', border: '1px solid rgba(0,229,192,0.15)', borderRadius: '100px', padding: '3px 10px' }}>{tag}</span>))}
+                </div>
+                <div style={{ color: '#00E5C0', fontSize: '14px', fontWeight: '600' }}>{f.cta}</div>
               </div>
-              <div style={{ color: '#00E5C0', fontSize: '14px', fontWeight: '600' }}>{f.cta}</div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* ── TECH STRIP ── */}
+      {/* TECH STRIP */}
       <section style={{ position: 'relative', zIndex: 5, borderTop: '1px solid rgba(0,229,192,0.08)', borderBottom: '1px solid rgba(0,229,192,0.08)', padding: '40px 48px', background: 'rgba(0,229,192,0.02)' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '12px', fontWeight: '600', color: 'rgba(255,255,255,0.3)', letterSpacing: '1px', textTransform: 'uppercase' }}>Built with</span>
@@ -354,7 +243,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* CTA */}
       <section style={{ position: 'relative', zIndex: 5, maxWidth: '800px', margin: '0 auto', padding: '100px 48px', textAlign: 'center' }}>
         <div style={{ background: 'linear-gradient(135deg, rgba(0,229,192,0.08), rgba(26,191,163,0.04))', border: '1px solid rgba(0,229,192,0.2)', borderRadius: '24px', padding: '60px' }}>
           <h2 style={{ fontSize: '40px', fontWeight: '800', letterSpacing: '-1px', color: '#fff', marginBottom: '16px' }}>
@@ -364,11 +253,17 @@ export default function HomePage() {
           <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.45)', marginBottom: '36px', lineHeight: '1.6' }}>Join the platform and start analyzing your API data with AI-powered insights.</p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
             {user ? (
-              <button onClick={() => router.push('/dashboard/upload')} style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '16px 40px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 0 60px rgba(0,229,192,0.3)' }}>Go to Dashboard →</button>
+              <Link href="/dashboard/upload" style={{ textDecoration: 'none' }}>
+                <button style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '16px 40px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 0 60px rgba(0,229,192,0.3)' }}>Go to Dashboard →</button>
+              </Link>
             ) : (
               <>
-                <button onClick={() => router.push('/signup')} style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '16px 40px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 0 60px rgba(0,229,192,0.3)' }}>Start Free Analysis →</button>
-                <button onClick={() => router.push('/login')} style={{ background: 'transparent', border: '1px solid rgba(0,229,192,0.3)', color: '#00E5C0', padding: '16px 40px', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Sign In</button>
+                <Link href="/signup" style={{ textDecoration: 'none' }}>
+                  <button style={{ background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', border: 'none', color: '#060E1E', padding: '16px 40px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 0 60px rgba(0,229,192,0.3)' }}>Start Free Analysis →</button>
+                </Link>
+                <Link href="/login" style={{ textDecoration: 'none' }}>
+                  <button style={{ background: 'transparent', border: '1px solid rgba(0,229,192,0.3)', color: '#00E5C0', padding: '16px 40px', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Sign In</button>
+                </Link>
               </>
             )}
           </div>
@@ -376,7 +271,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {/* FOOTER */}
       <footer style={{ position: 'relative', zIndex: 5, borderTop: '1px solid rgba(0,229,192,0.08)', padding: '24px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(6,14,30,0.8)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', color: '#060E1E' }}>M</div>
