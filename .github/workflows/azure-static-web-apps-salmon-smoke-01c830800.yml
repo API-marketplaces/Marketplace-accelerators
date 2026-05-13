@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    name: Build and Deploy
 
     steps:
       - name: Checkout Repository
@@ -17,20 +18,33 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: "npm"
+          cache-dependency-path: MonetizeMate-Frontend/package-lock.json
 
       - name: Install Dependencies
         working-directory: MonetizeMate-Frontend
         run: npm install --legacy-peer-deps
 
-      - name: Build Next App
+      - name: Build Next.js App
         working-directory: MonetizeMate-Frontend
+        env:
+          # Points frontend API proxy routes to your Azure backend
+          FASTAPI_URL: ${{ secrets.FASTAPI_URL }}
+          # JWT cookie name used by your auth middleware
+          JWT_COOKIE_NAME: ${{ secrets.JWT_COOKIE_NAME }}
+          NODE_ENV: production
         run: npm run build
 
-      - name: Deploy to Azure
+      - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_SALMON_SMOKE_01C830800 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
+          # Root of your Next.js project
           app_location: "MonetizeMate-Frontend"
-          output_location: ".next"
+          # IMPORTANT: for Next.js standalone/SSR, output_location must be empty string
+          # Using ".next" here only works for fully static exports — it breaks SSR routes
+          output_location: ""
+          # Skip the SWA-managed build; we already ran npm run build above
+          skip_app_build: true
