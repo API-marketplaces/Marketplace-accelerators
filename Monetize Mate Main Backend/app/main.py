@@ -6,7 +6,7 @@ from app.api import file_endpoints
 from app.api import dashboard_endpoints
 from app.api import prediction_endpoints
 from app.api import questionnaire_endpoints
-from app.api import concierge_endpoints  # ← import here
+from app.api import concierge_endpoints  
 from app.database.database import create_tables
 from fastapi.middleware.cors import CORSMiddleware 
 
@@ -26,14 +26,17 @@ app = FastAPI(
 )
 
 origins = [
+    "http://localhost:3000",
+    "http://localhost:3000/",
     "http://localhost:3001",
     "http://localhost:3001/",
-    "http://localhost:3002/",
     "http://localhost:3002",
-    "http://localhost:3000",   # ← add this too
-    "http://localhost:3000/",
+    "http://localhost:3002/",
     "http://10.6.122.47:3001",
     "http://10.6.122.47:3001/",
+    # ← Azure Static Web App URL
+    "https://salmon-smoke-01c830800.7.azurestaticapps.net",
+    "https://salmon-smoke-01c830800.7.azurestaticapps.net/",
 ]
 
 app.add_middleware(
@@ -50,7 +53,7 @@ app.include_router(dashboard_endpoints.router, prefix="/api/v1", tags=["Dashboar
 app.include_router(prediction_endpoints.router, prefix="/api/v1", tags=["Prediction Model"])
 app.include_router(questionnaire_endpoints.router, prefix="/api/v1", tags=["Questionnaire"])
 app.include_router(monetization_recommendation_endpoints.router, prefix="/api/v1", tags=["Monetization Recommendation"])
-app.include_router(concierge_endpoints.router, prefix="/api/v1", tags=["AI Concierge"])  # ← add here
+app.include_router(concierge_endpoints.router, prefix="/api/v1", tags=["AI Concierge"])
 
 @app.get("/")
 async def root():
