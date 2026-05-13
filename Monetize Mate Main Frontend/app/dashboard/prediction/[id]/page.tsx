@@ -51,7 +51,7 @@ export default function PredictionResultPage() {
     }
   }, [fileId]);
 
-  const getSeverityBadge = (severity: Anomaly['severity']) => {
+  const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'High': return 'destructive';
       case 'Medium': return 'secondary';
