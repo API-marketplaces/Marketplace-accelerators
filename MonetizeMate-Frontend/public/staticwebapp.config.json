@@ -22,13 +22,10 @@
     {
       "route": "/login",
       "allowedRoles": ["anonymous"]
+      
     },
     {
       "route": "/signup",
-      "allowedRoles": ["anonymous"]
-    },
-    {
-      "route": "/dashboard",
       "allowedRoles": ["anonymous"]
     },
     {
@@ -41,7 +38,7 @@
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html",
+    "rewrite": "/",
     "exclude": [
       "/api/*",
       "/_next/*",
@@ -56,7 +53,7 @@
   },
   "responseOverrides": {
     "404": {
-      "rewrite": "/index.html",
+      "rewrite": "/",
       "statusCode": 200
     }
   }
