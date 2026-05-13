@@ -50,6 +50,13 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
+      - name: Copy node_modules into .next for deployment
+        working-directory: "Monetize Mate Main Frontend"
+        run: |
+          cp package.json .next/
+          cp .npmrc .next/ 2>/dev/null || echo "no .npmrc"
+          cp -r node_modules .next/node_modules 2>/dev/null || true
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
