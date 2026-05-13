@@ -178,7 +178,7 @@ export default function PredictionResultPage() {
             <CardContent>
               <ChartContainer config={{}} className="h-80 w-full">
                 <ResponsiveContainer>
-                  <RechartsAreaChart data={data.futureVolume}>
+                  <RechartsAreaChart data={data.futureVolume?.predictions ?? []}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                     <YAxis />
