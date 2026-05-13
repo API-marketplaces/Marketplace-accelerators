@@ -184,9 +184,7 @@ export default function PredictionResultPage() {
                     <YAxis />
                     <Tooltip content={<ChartTooltipContent indicator="line" />} />
                     <Legend />
-                    <Area type="monotone" dataKey="predictedVolume" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} name="Predicted" />
-                    <Area type="monotone" dataKey="upperBound" stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.1} name="Upper Bound" />
-                    <Area type="monotone" dataKey="lowerBound" stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.1} name="Lower Bound" />
+                    <Area type="monotone" dataKey="predicted_request_count" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} name="Predicted" />
                   </RechartsAreaChart>
                 </ResponsiveContainer>
               </ChartContainer>
