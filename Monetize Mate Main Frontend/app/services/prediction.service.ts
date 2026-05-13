@@ -11,11 +11,17 @@ export const getPredictionData = async (fileId: string): Promise<PredictionData>
 
   // Mock data
   const mockData: PredictionData = {
-    anomalies: [
-      { id: '1', timestamp: '2023-10-26 14:30', severity: 'High', description: 'Sudden drop in API calls', expectedValue: 1200, actualValue: 200 },
-      { id: '2', timestamp: '2023-10-26 18:45', severity: 'Medium', description: 'Unusually high error rate', expectedValue: 5, actualValue: 25 },
-      { id: '3', timestamp: '2023-10-27 09:15', severity: 'Low', description: 'Slightly elevated latency', expectedValue: 200, actualValue: 350 },
-    ],
+    anomalies: {
+      request_spike: [
+        { timestamp: '2023-10-26 14:30', request_count: 200, user_id: 'user-1', user_count: 5, response_time: 120, response_code: 200, endpoint: '/api/v1/data', cpu_usage: 45, memory_usage: 60, rps: 10, feature_usage: 'read', session_duration: 300, current_usage: 200, quota_limit: 1200, ip_address: '192.168.1.1', revenue: 0, customers: 3, anomaly_score: 0.9, type: 'request_spike', reason: 'Sudden drop in API calls' },
+      ],
+      latency_spike: [
+        { timestamp: '2023-10-26 18:45', request_count: 500, user_id: 'user-2', user_count: 10, response_time: 850, response_code: 500, endpoint: '/api/v1/users', cpu_usage: 80, memory_usage: 75, rps: 25, feature_usage: 'write', session_duration: 120, current_usage: 500, quota_limit: 1000, ip_address: '192.168.1.2', revenue: 0, customers: 8, anomaly_score: 0.75, type: 'latency_spike', reason: 'Unusually high error rate' },
+      ],
+      resource_spike: [
+        { timestamp: '2023-10-27 09:15', request_count: 350, user_id: 'user-3', user_count: 7, response_time: 350, response_code: 200, endpoint: '/api/v1/metrics', cpu_usage: 90, memory_usage: 88, rps: 18, feature_usage: 'read', session_duration: 200, current_usage: 350, quota_limit: 1000, ip_address: '192.168.1.3', revenue: 0, customers: 5, anomaly_score: 0.6, type: 'resource_spike', reason: 'Slightly elevated latency' },
+      ],
+    },
     peakUsage: [
       { time: '00:00', usage: 250 },
       { time: '02:00', usage: 300 },
@@ -36,7 +42,8 @@ export const getPredictionData = async (fileId: string): Promise<PredictionData>
       { errorType: '404 Not Found', count: 15, percentage: 16.7 },
       { errorType: '429 Too Many Requests', count: 5, percentage: 5.5 },
     ],
-    futureVolume: [
+    futureVolume: {
+      predictions: [
         { date: '2023-11-01', predictedVolume: 2200, upperBound: 2500, lowerBound: 1900 },
         { date: '2023-11-02', predictedVolume: 2300, upperBound: 2600, lowerBound: 2000 },
         { date: '2023-11-03', predictedVolume: 2250, upperBound: 2550, lowerBound: 1950 },
@@ -44,7 +51,8 @@ export const getPredictionData = async (fileId: string): Promise<PredictionData>
         { date: '2023-11-05', predictedVolume: 2500, upperBound: 2800, lowerBound: 2200 },
         { date: '2023-11-06', predictedVolume: 2600, upperBound: 2900, lowerBound: 2300 },
         { date: '2023-11-07', predictedVolume: 2550, upperBound: 2850, lowerBound: 2250 },
-    ],
+      ],
+    },
     quotaExceedances: [
       { userId: 'user-123', apiKey: '...key1', usage: 9800, quota: 10000, exceedancePercentage: 98 },
       { userId: 'user-456', apiKey: '...key2', usage: 15000, quota: 15000, exceedancePercentage: 100 },
