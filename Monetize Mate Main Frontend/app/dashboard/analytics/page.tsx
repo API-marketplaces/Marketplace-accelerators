@@ -1,7 +1,8 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TimeFilter = '1d' | '7d' | '30d' | '90d'
@@ -45,7 +46,6 @@ interface RankingsData {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const ACCENT = '#00E5C0'
 const ACCENT_DIM = 'rgba(0,229,192,0.12)'
-const ACCENT_BORDER = 'rgba(0,229,192,0.2)'
 
 function fmt(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
@@ -53,7 +53,6 @@ function fmt(n: number): string {
   return n.toLocaleString()
 }
 
-// ─── Mini bar chart (pure CSS) ───────────────────────────────────────────────
 function BarChart({ data, valueKey, labelKey, color = ACCENT }: {
   data: Record<string, number | string>[]
   valueKey: string
@@ -84,7 +83,6 @@ function BarChart({ data, valueKey, labelKey, color = ACCENT }: {
   )
 }
 
-// ─── Sparkline chart ──────────────────────────────────────────────────────────
 function Sparkline({ data, valueKey, labelKey, color = ACCENT }: {
   data: Record<string, number | string>[]
   valueKey: string
@@ -98,7 +96,6 @@ function Sparkline({ data, valueKey, labelKey, color = ACCENT }: {
   const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - (v / max) * (h - 10)}`)
   const polyline = pts.join(' ')
   const area = `0,${h} ${polyline} ${w},${h}`
-
   return (
     <div style={{ overflowX: 'auto' }}>
       <svg viewBox={`0 0 ${w} ${h + 20}`} style={{ width: '100%', minWidth: '300px', height: '140px' }}>
@@ -123,7 +120,6 @@ function Sparkline({ data, valueKey, labelKey, color = ACCENT }: {
   )
 }
 
-// ─── Hourly heatmap row ────────────────────────────────────────────────────────
 function HourlyBars({ data }: { data: { hour: number; total_requests: number }[] }) {
   if (!data?.length) return <Empty />
   const full = Array.from({ length: 24 }, (_, h) => {
@@ -143,7 +139,6 @@ function HourlyBars({ data }: { data: { hour: number; total_requests: number }[]
   )
 }
 
-// ─── Distribution pills ───────────────────────────────────────────────────────
 function DistGrid({ items, labelKey, countKey }: { items: Record<string, string | number>[]; labelKey: string; countKey: string }) {
   if (!items?.length) return <Empty />
   const max = Math.max(...items.map(d => Number(d[countKey])), 1)
@@ -166,7 +161,6 @@ function DistGrid({ items, labelKey, countKey }: { items: Record<string, string 
   )
 }
 
-// ─── Rank table ───────────────────────────────────────────────────────────────
 function RankTable({ rows, cols }: { rows: Record<string, string | number>[]; cols: { key: string; label: string; mono?: boolean }[] }) {
   if (!rows?.length) return <Empty />
   return (
@@ -210,22 +204,15 @@ function Empty() {
 function Spinner() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px' }}>
-      <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: `3px solid ${ACCENT_DIM}`, borderTop: `3px solid ${ACCENT}`, animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: `3px solid rgba(0,229,192,0.12)`, borderTop: `3px solid ${ACCENT}`, animation: 'spin 0.8s linear infinite' }} />
     </div>
   )
 }
 
-// ─── Card wrapper ────────────────────────────────────────────────────────────
-function Card({ title, children, span = 1 }: { title: string; children: React.ReactNode; span?: number }) {
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{
-      gridColumn: span > 1 ? `span ${span}` : undefined,
-      background: 'rgba(255,255,255,0.025)',
-      border: '1px solid rgba(255,255,255,0.07)',
-      borderRadius: '16px',
-      overflow: 'hidden',
-    }}>
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <span style={{ fontSize: '13px', fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{title}</span>
       </div>
       <div style={{ padding: '20px' }}>{children}</div>
@@ -233,19 +220,18 @@ function Card({ title, children, span = 1 }: { title: string; children: React.Re
   )
 }
 
-// ─── Stat tile ───────────────────────────────────────────────────────────────
 function StatTile({ label, value, sub, color = '#fff' }: { label: string; value: string; sub?: string; color?: string }) {
   return (
     <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '20px 24px' }}>
-      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '8px' }}>{label}</div>
+      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>{label}</div>
       <div style={{ fontSize: '28px', fontWeight: '800', color, letterSpacing: '-0.5px', lineHeight: 1.1 }}>{value}</div>
       {sub && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>{sub}</div>}
     </div>
   )
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-export default function AnalyticsPage() {
+// ─── Inner page (uses useSearchParams) ────────────────────────────────────────
+function AnalyticsPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fileId = searchParams.get('fileId') ?? ''
@@ -300,8 +286,6 @@ export default function AnalyticsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #060E1E 0%, #0A1628 50%, #071420 100%)', fontFamily: "'DM Sans', system-ui, sans-serif", color: '#fff' }}>
-
-      {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid rgba(0,229,192,0.08)', background: 'rgba(6,14,30,0.9)', backdropFilter: 'blur(20px)', padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '60px' }}>
         <div onClick={() => router.push('/')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '800', color: '#060E1E' }}>M</div>
@@ -311,15 +295,13 @@ export default function AnalyticsPage() {
           </div>
         </div>
         <button onClick={() => router.push('/dashboard/upload?decisionMetrics=analytics')}
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '6px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s' }}
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '6px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
         >← Back to Upload</button>
       </header>
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '36px 40px' }}>
-
-        {/* Page title + controls */}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
@@ -328,22 +310,19 @@ export default function AnalyticsPage() {
             </div>
             <h1 style={{ fontSize: '26px', fontWeight: '800', letterSpacing: '-0.5px', color: '#fff' }}>API Analytics Dashboard</h1>
           </div>
-
-          {/* Time filter pills */}
           <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '4px' }}>
             {timeFilters.map(tf => (
               <button key={tf.v} onClick={() => setTimeFilter(tf.v)}
-                style={{ padding: '6px 14px', borderRadius: '7px', border: 'none', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s', background: timeFilter === tf.v ? 'linear-gradient(135deg, #00E5C0, #1ABFA3)' : 'transparent', color: timeFilter === tf.v ? '#060E1E' : 'rgba(255,255,255,0.45)' }}
+                style={{ padding: '6px 14px', borderRadius: '7px', border: 'none', fontSize: '12px', fontWeight: '600', cursor: 'pointer', background: timeFilter === tf.v ? 'linear-gradient(135deg, #00E5C0, #1ABFA3)' : 'transparent', color: timeFilter === tf.v ? '#060E1E' : 'rgba(255,255,255,0.45)' }}
               >{tf.l}</button>
             ))}
           </div>
         </div>
 
-        {/* Tabs */}
         <div style={{ display: 'flex', gap: '2px', marginBottom: '28px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '4px', overflowX: 'auto' }}>
           {tabs.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '9px', border: 'none', fontSize: '13px', fontWeight: activeTab === tab.id ? '700' : '500', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s', background: activeTab === tab.id ? 'linear-gradient(135deg, #00E5C0, #1ABFA3)' : 'transparent', color: activeTab === tab.id ? '#060E1E' : 'rgba(255,255,255,0.5)', boxShadow: activeTab === tab.id ? `0 2px 12px ${ACCENT}30` : 'none' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '9px', border: 'none', fontSize: '13px', fontWeight: activeTab === tab.id ? '700' : '500', cursor: 'pointer', whiteSpace: 'nowrap', background: activeTab === tab.id ? 'linear-gradient(135deg, #00E5C0, #1ABFA3)' : 'transparent', color: activeTab === tab.id ? '#060E1E' : 'rgba(255,255,255,0.5)' }}
             >
               <span style={{ fontSize: '14px' }}>{tab.icon}</span>
               {tab.label}
@@ -351,7 +330,6 @@ export default function AnalyticsPage() {
           ))}
         </div>
 
-        {/* Content */}
         {error && (
           <div style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '12px', padding: '16px 20px', color: '#f87171', fontSize: '13px', marginBottom: '24px' }}>
             ⚠ {error}
@@ -360,7 +338,6 @@ export default function AnalyticsPage() {
 
         {loading ? <Spinner /> : (
           <>
-            {/* ── OVERVIEW ── */}
             {activeTab === 'overview' && overviewData && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
@@ -370,77 +347,39 @@ export default function AnalyticsPage() {
                   <StatTile label="Avg Response" value={overviewData.avg_response_time ? `${Math.round(overviewData.avg_response_time)}ms` : '—'} color="#facc15" />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <Card title="Daily Request Volume">
-                    <Sparkline data={overviewData.daily_usage} valueKey="total_requests" labelKey="date" />
-                  </Card>
-                  <Card title="Daily Errors">
-                    <Sparkline data={overviewData.daily_usage} valueKey="errors" labelKey="date" color="#f87171" />
-                  </Card>
+                  <Card title="Daily Request Volume"><Sparkline data={overviewData.daily_usage} valueKey="total_requests" labelKey="date" /></Card>
+                  <Card title="Daily Errors"><Sparkline data={overviewData.daily_usage} valueKey="errors" labelKey="date" color="#f87171" /></Card>
                 </div>
               </div>
             )}
-
-            {/* ── ANALYSIS ── */}
             {activeTab === 'analysis' && analysisData && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Card title="Top 5 APIs by Consumption">
-                  <BarChart data={analysisData.top_5_apis_by_consumption} valueKey="total_requests" labelKey="endpoint" />
-                </Card>
-                <Card title="APIs with Most Errors">
-                  <BarChart data={analysisData.apis_with_most_errors} valueKey="error_requests" labelKey="endpoint" color="#f87171" />
-                </Card>
+                <Card title="Top 5 APIs by Consumption"><BarChart data={analysisData.top_5_apis_by_consumption} valueKey="total_requests" labelKey="endpoint" /></Card>
+                <Card title="APIs with Most Errors"><BarChart data={analysisData.apis_with_most_errors} valueKey="error_requests" labelKey="endpoint" color="#f87171" /></Card>
               </div>
             )}
-
-            {/* ── TEMPORAL ── */}
             {activeTab === 'temporal' && temporalData && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <Card title="Daily Request Volume">
-                  <Sparkline data={temporalData.daily_request_volume} valueKey="total_requests" labelKey="date" />
-                </Card>
-                <Card title="Hourly Call Distribution (all time)">
-                  <HourlyBars data={temporalData.hourly_call_distribution} />
-                </Card>
+                <Card title="Daily Request Volume"><Sparkline data={temporalData.daily_request_volume} valueKey="total_requests" labelKey="date" /></Card>
+                <Card title="Hourly Call Distribution"><HourlyBars data={temporalData.hourly_call_distribution} /></Card>
               </div>
             )}
-
-            {/* ── CLIENTS ── */}
             {activeTab === 'clients' && clientsData && (
-              <Card title="Top API Consumers">
-                <BarChart data={clientsData.top_consumers.slice(0, 15)} valueKey="total_requests" labelKey="client_id" />
-              </Card>
+              <Card title="Top API Consumers"><BarChart data={clientsData.top_consumers.slice(0, 15)} valueKey="total_requests" labelKey="client_id" /></Card>
             )}
-
-            {/* ── DISTRIBUTION ── */}
             {activeTab === 'distribution' && distributionData && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Card title="Geographic Distribution">
-                  <DistGrid items={distributionData.geographic_distribution} labelKey="geo" countKey="count" />
-                </Card>
-                <Card title="Brand Distribution">
-                  <DistGrid items={distributionData.brand_distribution} labelKey="brand" countKey="count" />
-                </Card>
-                <Card title="Partner Distribution">
-                  <DistGrid items={distributionData.partner_distribution} labelKey="partner" countKey="count" />
-                </Card>
-                <Card title="Team Distribution">
-                  <DistGrid items={distributionData.team_distribution} labelKey="team" countKey="count" />
-                </Card>
+                <Card title="Geographic Distribution"><DistGrid items={distributionData.geographic_distribution} labelKey="geo" countKey="count" /></Card>
+                <Card title="Brand Distribution"><DistGrid items={distributionData.brand_distribution} labelKey="brand" countKey="count" /></Card>
+                <Card title="Partner Distribution"><DistGrid items={distributionData.partner_distribution} labelKey="partner" countKey="count" /></Card>
+                <Card title="Team Distribution"><DistGrid items={distributionData.team_distribution} labelKey="team" countKey="count" /></Card>
               </div>
             )}
-
-            {/* ── RANKINGS ── */}
             {activeTab === 'rankings' && rankingsData && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <Card title="Top 20 Clients by Requests">
-                  <RankTable rows={rankingsData.top_20_clients} cols={[{ key: 'client_id', label: 'Client ID', mono: true }, { key: 'total_requests', label: 'Requests' }]} />
-                </Card>
-                <Card title="Top 20 APIs Accessed">
-                  <RankTable rows={rankingsData.top_20_apis_accessed} cols={[{ key: 'endpoint', label: 'Endpoint', mono: true }, { key: 'total_requests', label: 'Requests' }]} />
-                </Card>
-                <Card title="Top 20 Failed APIs">
-                  <RankTable rows={rankingsData.top_20_failed_apis} cols={[{ key: 'endpoint', label: 'Endpoint', mono: true }, { key: 'error_requests', label: 'Error Requests' }]} />
-                </Card>
+                <Card title="Top 20 Clients by Requests"><RankTable rows={rankingsData.top_20_clients} cols={[{ key: 'client_id', label: 'Client ID', mono: true }, { key: 'total_requests', label: 'Requests' }]} /></Card>
+                <Card title="Top 20 APIs Accessed"><RankTable rows={rankingsData.top_20_apis_accessed} cols={[{ key: 'endpoint', label: 'Endpoint', mono: true }, { key: 'total_requests', label: 'Requests' }]} /></Card>
+                <Card title="Top 20 Failed APIs"><RankTable rows={rankingsData.top_20_failed_apis} cols={[{ key: 'endpoint', label: 'Endpoint', mono: true }, { key: 'error_requests', label: 'Error Requests' }]} /></Card>
               </div>
             )}
           </>
@@ -456,5 +395,18 @@ export default function AnalyticsPage() {
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
       `}</style>
     </div>
+  )
+}
+
+// ─── Default export wrapped in Suspense ───────────────────────────────────────
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: '#060E1E', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5C0', fontFamily: 'system-ui', fontSize: '16px' }}>
+        Loading…
+      </div>
+    }>
+      <AnalyticsPageInner />
+    </Suspense>
   )
 }
