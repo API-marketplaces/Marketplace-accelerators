@@ -23,6 +23,27 @@ jobs:
           submodules: true
           lfs: false
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        working-directory: MonetizeMate-Frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Create .env file
+        working-directory: MonetizeMate-Frontend
+        run: |
+          echo "FASTAPI_BASE_URL=${{ secrets.FASTAPI_BASE_URL }}" >> .env.local
+          echo "NEXT_PUBLIC_API_TIMEOUT=30000" >> .env.local
+          echo "FASTAPI_URL=${{ secrets.FASTAPI_BASE_URL }}" >> .env.local
+          echo "NEXT_PUBLIC_AUTH_TOKEN_KEY=auth_token" >> .env.local
+          echo "NEXT_PUBLIC_APP_NAME=MonetizeMate" >> .env.local
+          echo "COOKIE=session" >> .env.local
+          echo "REFRESH_COOKIE=refresh_token" >> .env.local
+          echo "MAX_AGE=86400" >> .env.local
+
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
 
