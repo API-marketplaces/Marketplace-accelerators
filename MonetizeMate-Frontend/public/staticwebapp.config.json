@@ -2,58 +2,44 @@
   "platform": {
     "apiRuntime": "node:20"
   },
-  "trailingSlash": "never",
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/_next/*",
+      "/api/*",
+      "/*.{png,jpg,gif,svg,ico,css,js,woff,woff2}"
+    ]
+  },
   "routes": [
-    {
-      "route": "/api/*",
-      "allowedRoles": ["anonymous"]
-    },
-    {
-      "route": "/_next/static/*",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
-      },
-      "allowedRoles": ["anonymous"]
-    },
     {
       "route": "/_next/*",
       "allowedRoles": ["anonymous"]
     },
     {
-      "route": "/login",
+      "route": "/api/*",
       "allowedRoles": ["anonymous"]
-      
+    },
+    {
+      "route": "/login",
+      "rewrite": "/login"
     },
     {
       "route": "/signup",
-      "allowedRoles": ["anonymous"]
+      "rewrite": "/signup"
     },
     {
       "route": "/dashboard/*",
-      "allowedRoles": ["anonymous"]
+      "rewrite": "/dashboard"
     },
     {
       "route": "/*",
-      "allowedRoles": ["anonymous"]
+      "serve": "/index.html",
+      "statusCode": 200
     }
   ],
-  "navigationFallback": {
-    "rewrite": "/",
-    "exclude": [
-      "/api/*",
-      "/_next/*",
-      "/*.ico",
-      "/*.png",
-      "/*.jpg",
-      "/*.svg",
-      "/*.json",
-      "/*.css",
-      "/*.js"
-    ]
-  },
   "responseOverrides": {
     "404": {
-      "rewrite": "/",
+      "rewrite": "/index.html",
       "statusCode": 200
     }
   }
