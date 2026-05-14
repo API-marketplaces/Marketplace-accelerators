@@ -46,3 +46,4 @@ jobs:
           action: upload
           app_location: "MonetizeMate-Frontend"
           output_location: ".next"
+          
