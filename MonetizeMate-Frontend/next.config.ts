@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // Remove output: 'standalone' - not compatible with Azure Static Web Apps
 }
 
 export default nextConfig
