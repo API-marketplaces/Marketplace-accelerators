@@ -26,16 +26,14 @@ jobs:
         working-directory: MonetizeMate-Frontend
         run: npm install --legacy-peer-deps
 
-      - name: Create .env file
-        working-directory: MonetizeMate-Frontend
-        run: |
-          echo "FASTAPI_URL=${{ secrets.FASTAPI_BASE_URL }}" >> .env.production
-          echo "NEXT_PUBLIC_API_TIMEOUT=30000" >> .env.production
-          echo "NEXT_PUBLIC_AUTH_TOKEN_KEY=auth_token" >> .env.production
-          echo "NEXT_PUBLIC_APP_NAME=MonetizeMate" >> .env.production
-
       - name: Build Next App
         working-directory: MonetizeMate-Frontend
+        env:
+          FASTAPI_BASE_URL: ${{ secrets.FASTAPI_BASE_URL }}
+          FASTAPI_URL: ${{ secrets.FASTAPI_BASE_URL }}
+          NEXT_PUBLIC_API_TIMEOUT: "60000"
+          NEXT_PUBLIC_AUTH_TOKEN_KEY: "auth_token"
+          NEXT_PUBLIC_APP_NAME: "MonetizeMate"
         run: npm run build
 
       - name: Deploy to Azure Static Web App
