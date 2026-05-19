@@ -13,11 +13,10 @@ export async function apiFetch<T>(
     input: RequestInfo,
     init: RequestInit & { timeoutMs?: number } = {}
 ): Promise<T> {
-    // const { timeoutMs = 15000, ...rest } = init
-    const { timeoutMs = 60000, ...rest } = init  // 60s instead of 15s
+    const { timeoutMs = 30_000, ...rest } = init  // 30s — matches maxDuration on route handlers
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    const timeout = setTimeout(() => controller.abort(new DOMException('Request timed out', 'AbortError')), timeoutMs)
 
     try {
         const res = await fetch(input, {
@@ -30,6 +29,8 @@ export async function apiFetch<T>(
             },
         })
 
+        // Read the body *before* clearing the timeout so the abort signal
+        // stays alive for the full response stream.
         const isJson = (res.headers.get('content-type') || '').includes('application/json')
         const body = isJson ? await res.json() : await res.text()
 
@@ -39,6 +40,11 @@ export async function apiFetch<T>(
         }
 
         return body as T
+    } catch (err: any) {
+        // Re-throw AbortError as-is so SWR's onErrorRetry can identify it
+        // and retry instead of treating it as a permanent failure.
+        if (err?.name === 'AbortError') throw err
+        throw err
     } finally {
         clearTimeout(timeout)
     }

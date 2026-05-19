@@ -33,15 +33,20 @@ async def upload_file(
     - Stores the file in the configured UPLOAD_DIRECTORY.
     - Returns the metadata of the uploaded file including its ID.
     """
-    # Ensure the upload directory exists
-    os.makedirs(settings.UPLOAD_DIRECTORY, exist_ok=True)
+    # Ensure the upload directory exists (use absolute path)
+    upload_dir_abs = os.path.abspath(settings.UPLOAD_DIRECTORY)
+    os.makedirs(upload_dir_abs, exist_ok=True)
 
     # Sanitize filename to prevent directory traversal issues
     orig_filename = os.path.basename(file.filename)
     unique_suffix = str(uuid.uuid4())
     name_part, file_extension = os.path.splitext(orig_filename)
     filename = f"{name_part}_{unique_suffix}{file_extension}"
-    file_location = os.path.join(settings.UPLOAD_DIRECTORY, filename)
+
+    # ✅ FIX: Store as absolute path so os.path.exists() always resolves correctly
+    # regardless of the working directory the backend process was launched from.
+    file_location = os.path.abspath(os.path.join(settings.UPLOAD_DIRECTORY, filename))
+
     metrics = decisionMetrics  # Treat decisionMetrics as a plain string
 
     try:
@@ -95,14 +100,14 @@ async def upload_file(
         db_file = crud_files.create_file_record(
             db=db,
             filename=filename,
-            filepath=file_location,
+            filepath=file_location,   # absolute path stored here
             displayname=displayname,
             description=description,
             file_size=file_size,
             file_type=file_type,
             owner_id=current_user.id,
-            decisionMetrics=metrics
-            ,records=records_count
+            decisionMetrics=metrics,
+            records=records_count
         )
         return db_file
     except Exception as e:
@@ -160,8 +165,8 @@ async def serve_file(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found on disk (metadata exists)")
     
     # Ensure the file is within the allowed upload directory to prevent path traversal
-    # This check is still important even with DB paths, as a malicious path could be injected
-    if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
+    upload_dir_abs = os.path.abspath(settings.UPLOAD_DIRECTORY)
+    if not os.path.abspath(file_path).startswith(upload_dir_abs):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
 
     return FileResponse(path=file_path, filename=db_file.filename, media_type="application/octet-stream")
