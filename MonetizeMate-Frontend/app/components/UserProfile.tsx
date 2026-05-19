@@ -1,141 +1,319 @@
-import { useState } from "react";
-import { Button } from "./ui/button";
-import { Card } from "./ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Separator } from "./ui/separator";
-import { Badge } from "./ui/badge";
-import { User, LogOut, Clock, Compass, BarChart3, Brain, Calendar } from "lucide-react";
+'use client'
 
-interface User {
-  name: string;
-  email: string;
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
+import { Compass, Brain, BarChart3, Calendar, LogOut, Clock, ChevronRight } from 'lucide-react'
+import { useAuth } from '../hooks/useAuth'
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function getInitials(name?: string, email?: string): string {
+  if (name?.trim()) {
+    const parts = name.trim().split(/\s+/)
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase()
+  }
+  return email?.slice(0, 2).toUpperCase() ?? 'U'
 }
 
-interface UserProfileProps {
-  user: User;
-  onLogout: () => void;
-  onBack: () => void; 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface Activity {
+  id: string
+  title: string
+  description: string
+  date: string
+  time: string
+  icon: React.ElementType
+  color: string
 }
 
-export default function UserProfile({ user, onLogout }: UserProfileProps) {
-  const [isOpen, setIsOpen] = useState(false);
+// ─── Static sample activities (replace with real data as needed) ──────────────
 
-  const recentActivities = [
-    {
-      id: "1",
-      type: "strategy",
-      title: "Strategy Analysis Completed",
-      description: "Subscription model recommended",
-      date: "2024-12-15",
-      time: "2:30 PM",
-      status: "completed",
-      icon: Compass
-    },
-    {
-      id: "2",
-      type: "prediction",
-      title: "Revenue Forecast Generated",
-      description: "6-month prediction analysis",
-      date: "2024-12-14",
-      time: "11:15 AM",
-      status: "completed",
-      icon: Brain
-    },
-    {
-      id: "3",
-      type: "analysis",
-      title: "API Usage Analysis",
-      description: "Weekly performance review",
-      date: "2024-12-13",
-      time: "4:45 PM",
-      status: "completed",
-      icon: BarChart3
-    }
-  ];
+const RECENT_ACTIVITIES: Activity[] = [
+  {
+    id: '1',
+    title: 'Subscription model recommended',
+    description: 'Strategy Analysis',
+    date: '2024-12-15',
+    time: '2:30 PM',
+    icon: Compass,
+    color: '#00E5C0',
+  },
+  {
+    id: '2',
+    title: '6-month prediction analysis',
+    description: 'Revenue Forecast',
+    date: '2024-12-14',
+    time: '11:15 AM',
+    icon: Brain,
+    color: '#818cf8',
+  },
+  {
+    id: '3',
+    title: 'Weekly performance review',
+    description: 'API Usage Analysis',
+    date: '2024-12-13',
+    time: '4:45 PM',
+    icon: BarChart3,
+    color: '#f59e0b',
+  },
+]
 
-  const getInitials = (fullName: string) => {
-    const name = (fullName || '').trim();
-    if (!name) return '';
-    const parts = name.split(/\s+/);
-    if (parts.length === 1) {
-      // If only one name, use up to first two letters
-      return parts[0].slice(0, 2).toUpperCase();
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+function Avatar({ initials, size = 36 }: { initials: string; size?: number }) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #00E5C0 0%, #0095a8 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 700,
+        fontSize: size * 0.36,
+        color: '#060E1E',
+        flexShrink: 0,
+        letterSpacing: '0.5px',
+      }}
+    >
+      {initials}
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+/**
+ * UserProfile popover — drop this wherever the user avatar/icon appears.
+ * It reads auth state from `useAuth()` so no props are required.
+ * Logout clears the session and redirects to "/" automatically.
+ */
+export default function UserProfile() {
+  const { user, logout } = useAuth()
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  if (!user) return null
+
+  const initials = getInitials(user.name, user.email)
+  const displayName = user.name || user.email?.split('@')[0] || 'User'
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try {
+      await logout()
+    } finally {
+      setLoggingOut(false)
+      setOpen(false)
+      router.push('/')
+      router.refresh()
     }
-    // Use first letter of first and last part
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
+  }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={open} onOpenChange={setOpen}>
+      {/* ── Trigger: avatar button ── */}
       <PopoverTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="w-10 h-10 rounded-full border-blue-300 text-blue-700 hover:bg-blue-50 p-0"
+        <button
+          aria-label="Open user menu"
+          style={{
+            background: 'none',
+            border: '2px solid rgba(0,229,192,0.35)',
+            padding: 0,
+            borderRadius: '50%',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'border-color 0.2s',
+            outline: 'none',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = '#00E5C0')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(0,229,192,0.35)')}
         >
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-            <span className="text-xs text-blue-700">{getInitials(user.name)}</span>
-          </div>
-        </Button>
+          <Avatar initials={initials} size={36} />
+        </button>
       </PopoverTrigger>
-      
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="p-4">
-          <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-sm text-blue-700">{getInitials(user.name)}</span>
-            </div>
-            <div>
-              <p className="text-blue-900 font-medium">{user.name}</p>
-              <p className="text-blue-600 text-sm">{user.email}</p>
+
+      {/* ── Popover content ── */}
+      <PopoverContent
+        align="end"
+        sideOffset={10}
+        style={{
+          width: 300,
+          padding: 0,
+          background: '#0D1B2E',
+          border: '1px solid rgba(0,229,192,0.15)',
+          borderRadius: 14,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,229,192,0.08)',
+          overflow: 'hidden',
+          color: '#fff',
+          fontFamily: "'DM Sans', system-ui, sans-serif",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: '18px 20px 16px',
+            background: 'linear-gradient(180deg, rgba(0,229,192,0.07) 0%, transparent 100%)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Avatar initials={initials} size={44} />
+            <div style={{ minWidth: 0 }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#fff',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {displayName}
+              </p>
+              <p
+                style={{
+                  margin: '2px 0 0',
+                  fontSize: 12,
+                  color: 'rgba(0,229,192,0.7)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {user.email}
+              </p>
             </div>
           </div>
-          
-          <Separator className="mb-4" />
-          
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-blue-600" />
-              <h3 className="text-blue-900 font-medium">Recent Activity</h3>
-            </div>
-            
-            <div className="space-y-3 max-h-48 overflow-y-auto">
-              {recentActivities.map((activity) => {
-                const IconComponent = activity.icon;
-                return (
-                  <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-blue-50 transition-colors">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <IconComponent className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <p className="text-blue-900 text-sm font-medium truncate">{activity.title}</p>
-                      <p className="text-blue-600 text-xs mb-1">{activity.description}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs px-1 py-0">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {activity.date}
-                        </Badge>
-                        <span className="text-blue-500 text-xs">{activity.time}</span>
-                      </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div style={{ padding: '14px 20px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <Clock style={{ width: 13, height: 13, color: 'rgba(0,229,192,0.6)' }} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+              Recent Activity
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {RECENT_ACTIVITIES.map(activity => {
+              const Icon = activity.icon
+              return (
+                <div
+                  key={activity.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '8px 10px',
+                    borderRadius: 9,
+                    transition: 'background 0.15s',
+                    cursor: 'default',
+                  }}
+                  onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)')}
+                  onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.background = 'transparent')}
+                >
+                  {/* Icon chip */}
+                  <div
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: 8,
+                      background: `${activity.color}18`,
+                      border: `1px solid ${activity.color}30`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon style={{ width: 14, height: 14, color: activity.color }} />
+                  </div>
+
+                  {/* Text */}
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: 'rgba(255,255,255,0.85)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {activity.title}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <Calendar style={{ width: 11, height: 11, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{activity.date}</span>
+                      <span style={{ fontSize: 11, color: 'rgba(0,229,192,0.55)', fontWeight: 500 }}>{activity.time}</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              )
+            })}
           </div>
-          
-          <Separator className="mb-4" />
-          
-          <Button 
-            variant="outline" 
-            onClick={onLogout}
-            className="w-full border-red-300 text-red-700 hover:bg-red-50"
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />
+
+        {/* Logout */}
+        <div style={{ padding: '8px 12px 12px' }}>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              padding: '9px 12px',
+              border: '1px solid rgba(239,68,68,0.25)',
+              borderRadius: 9,
+              background: 'transparent',
+              color: '#f87171',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: loggingOut ? 'not-allowed' : 'pointer',
+              opacity: loggingOut ? 0.6 : 1,
+              transition: 'all 0.15s',
+              fontFamily: 'inherit',
+            }}
+            onMouseEnter={e => {
+              if (!loggingOut) {
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.5)'
+              }
+            }}
+            onMouseLeave={e => {
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+              ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.25)'
+            }}
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <LogOut style={{ width: 14, height: 14 }} />
+              {loggingOut ? 'Signing out…' : 'Sign out'}
+            </div>
+            {!loggingOut && <ChevronRight style={{ width: 13, height: 13, opacity: 0.5 }} />}
+          </button>
         </div>
       </PopoverContent>
     </Popover>
-  );
+  )
 }

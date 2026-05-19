@@ -18,55 +18,91 @@ import {
 } from "@/app/hooks/useAnalytics";
 import ConciergeBubble from "../../../components/ConciergeBubble";
 
-const fmt = (val: any) => (val != null ? Number(val).toLocaleString('en-US') : '0');
+const fmt = (val: any) => (val != null ? Number(val).toLocaleString("en-US") : "0");
+
+// ── Dark-theme chart colours ────────────────────────────────────────────────
+const C = {
+  accent:   "#00E5C0",   // teal accent
+  accentDim:"#1ABFA3",
+  blue:     "#3b82f6",
+  red:      "#ef4444",
+  purple:   "#a78bfa",
+  orange:   "#fb923c",
+  yellow:   "#fbbf24",
+  green:    "#34d399",
+  grid:     "rgba(255,255,255,0.07)",
+  axis:     "rgba(255,255,255,0.45)",
+  tooltip:  { backgroundColor: "#0D2035", border: "1px solid rgba(0,229,192,0.35)", borderRadius: "8px", color: "#fff" },
+};
+const PIE_COLORS = [C.accent, C.blue, C.purple, C.orange, C.yellow, C.green, "#f472b6", "#38bdf8"];
+
+// ── Shared card style ───────────────────────────────────────────────────────
+const cardStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(0,229,192,0.14)",
+  borderRadius: 12,
+};
 
 export default function ApiStatsPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [selectedFileId, setSelectedFileId] = useState<string>(params?.id || "");
-
   const [timeFilter, setTimeFilter] = useState<string>("7d");
   const [debouncedFilter, setDebouncedFilter] = useState<string>("7d");
 
+  useEffect(() => { if (params.id) setSelectedFileId(params.id); }, [params.id]);
   useEffect(() => {
-    if (params.id) setSelectedFileId(params.id);
-  }, [params.id]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedFilter(timeFilter), 400);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setDebouncedFilter(timeFilter), 400);
+    return () => clearTimeout(t);
   }, [timeFilter]);
 
-  const { overview, isLoading: overviewLoading } = useAnalyticsOverview(selectedFileId, debouncedFilter);
-  const { analysis } = useAnalysis(selectedFileId, debouncedFilter);
-  const { temporalAnalysis } = useTemporalAnalysis(selectedFileId, debouncedFilter);
-  const { clientsAnalysis } = useClientsAnalysis(selectedFileId, debouncedFilter);
-  const { distributionAnalysis } = useDistributionAnalysis(selectedFileId, debouncedFilter);
-  const { rankingsAnalysis } = useRankingsAnalysis(selectedFileId, debouncedFilter);
+  const { overview, isLoading: overviewLoading, isError: overviewError }       = useAnalyticsOverview(selectedFileId, debouncedFilter);
+  const { analysis,          isError: analysisError }                           = useAnalysis(selectedFileId, debouncedFilter);
+  const { temporalAnalysis,  isError: temporalError }                           = useTemporalAnalysis(selectedFileId, debouncedFilter);
+  const { clientsAnalysis,   isError: clientsError }                            = useClientsAnalysis(selectedFileId, debouncedFilter);
+  const { distributionAnalysis, isError: distributionError }                    = useDistributionAnalysis(selectedFileId, debouncedFilter);
+  const { rankingsAnalysis,  isError: rankingsError }                           = useRankingsAnalysis(selectedFileId, debouncedFilter);
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
+  const ErrorBanner = ({ error }: { error: any }) =>
+    error ? (
+      <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 8 }}
+           className="flex items-center gap-2 p-3 mb-4 text-sm text-red-400">
+        <AlertTriangle className="w-4 h-4 shrink-0" />
+        <span>Failed to load data: {error?.message || "Unknown error."}</span>
+      </div>
+    ) : null;
+
+  // ── Stat cards ─────────────────────────────────────────────────────────────
+  const statCards = [
+    { label: "Total Requests",    value: fmt(overview?.total_requests),                     icon: <Activity className="w-7 h-7" />, color: C.accent  },
+    { label: "Successful",        value: fmt(overview?.successful_requests),                icon: <CheckCircle className="w-7 h-7" />, color: C.green   },
+    { label: "Errors",            value: fmt(overview?.errors),                             icon: <AlertTriangle className="w-7 h-7" />, color: C.red     },
+    { label: "Avg Response Time", value: `${Math.round(overview?.avg_response_time || 0)}ms`, icon: <Timer className="w-7 h-7" />, color: C.purple  },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen p-6 md:p-8" style={{ background: "transparent" }}>
+      <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => router.back()} className="border-blue-300 text-blue-700 hover:bg-blue-50">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to File Selection
-            </Button>
+            <button
+              onClick={() => router.back()}
+              style={{ background: "rgba(0,229,192,0.1)", border: "1px solid rgba(0,229,192,0.35)", color: C.accent, borderRadius: 8, padding: "8px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to File Selection
+            </button>
             <div>
-              <h1 className="text-2xl text-blue-900">API Analytics Dashboard</h1>
-              <p className="text-blue-700">Comprehensive insights from your API usage data</p>
+              <h1 className="text-2xl font-semibold text-white">API Analytics Dashboard</h1>
+              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Comprehensive insights from your API usage data</p>
             </div>
           </div>
           <Select value={timeFilter} onValueChange={setTimeFilter}>
-            <SelectTrigger className="w-32 border-blue-300">
+            <SelectTrigger style={{ width: 140, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(0,229,192,0.25)", color: "#fff" }}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent style={{ background: "#0A1628", border: "1px solid rgba(0,229,192,0.25)", color: "#fff" }}>
               <SelectItem value="1d">Last 24h</SelectItem>
               <SelectItem value="7d">Last 7 days</SelectItem>
               <SelectItem value="30d">Last 30 days</SelectItem>
@@ -75,290 +111,301 @@ export default function ApiStatsPage() {
           </Select>
         </div>
 
-        {/* Data Source Banner */}
-        <Card className="p-4 mb-8 bg-blue-50 border-blue-200">
-          <div className="flex items-center gap-3">
-            <BarChart3 className="w-5 h-5 text-blue-600" />
-            <div>
-              <p className="text-blue-900">Analysis source: <span className="font-medium">API Logs</span></p>
-              <p className="text-sm text-blue-600">
-                {overviewLoading ? 'Loading...' : `${fmt(overview?.total_requests)} total records`} • Time range: {timeFilter}
-              </p>
-            </div>
+        {/* ── Source banner ── */}
+        <div style={{ ...cardStyle, padding: "14px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+          <BarChart3 style={{ color: C.accent, width: 20, height: 20, flexShrink: 0 }} />
+          <div>
+            <p className="text-white text-sm">Analysis source: <span style={{ color: C.accent }}>API Logs</span></p>
+            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>
+              {overviewLoading ? "Loading…" : `${fmt(overview?.total_requests)} total records`} • Time range: {timeFilter}
+            </p>
           </div>
-        </Card>
+        </div>
 
+        {/* ── Tabs ── */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="apis">API Analysis</TabsTrigger>
-            <TabsTrigger value="temporal">Temporal</TabsTrigger>
-            <TabsTrigger value="clients">Clients</TabsTrigger>
-            <TabsTrigger value="distribution">Distribution</TabsTrigger>
-            <TabsTrigger value="rankings">Rankings</TabsTrigger>
+          <TabsList style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(0,229,192,0.12)", borderRadius: 10, padding: 4, display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 2 }}>
+            {["overview","apis","temporal","clients","distribution","rankings"].map(v => (
+              <TabsTrigger key={v} value={v} style={{ borderRadius: 7, fontSize: 13, color: "rgba(255,255,255,0.6)", textTransform: "capitalize" }}>
+                {v === "apis" ? "API Analysis" : v.charAt(0).toUpperCase() + v.slice(1)}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          {/* Overview */}
+          {/* ══ OVERVIEW ══ */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-blue-200">
-                <div className="flex items-center gap-3">
-                  <Activity className="w-8 h-8 text-blue-600" />
-                  <div>
-                    <p className="text-blue-600 text-sm">Total Requests</p>
-                    <p className="text-2xl text-blue-900">{overviewLoading ? '...' : fmt(overview?.total_requests)}</p>
-                  </div>
+            <ErrorBanner error={overviewError} />
+
+            {/* Stat cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {statCards.map(({ label, value, icon, color }) => (
+                <div key={label} style={{ ...cardStyle, padding: "20px 24px" }}>
+                  <div style={{ color, marginBottom: 8 }}>{icon}</div>
+                  <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 4 }}>{label}</p>
+                  <p style={{ color: "#fff", fontSize: 22, fontWeight: 600 }}>{overviewLoading ? "…" : value}</p>
                 </div>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-green-200">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
-                  <div>
-                    <p className="text-green-600 text-sm">Successful</p>
-                    <p className="text-2xl text-green-900">{overviewLoading ? '...' : fmt(overview?.successful_requests)}</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-red-200">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-8 h-8 text-red-600" />
-                  <div>
-                    <p className="text-red-600 text-sm">Errors</p>
-                    <p className="text-2xl text-red-900">{overviewLoading ? '...' : fmt(overview?.errors)}</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-purple-200">
-                <div className="flex items-center gap-3">
-                  <Timer className="w-8 h-8 text-purple-600" />
-                  <div>
-                    <p className="text-purple-600 text-sm">Avg Response Time</p>
-                    <p className="text-2xl text-purple-900">{overviewLoading ? '...' : `${Math.round(overview?.avg_response_time || 0)}ms`}</p>
-                  </div>
-                </div>
-              </Card>
+              ))}
             </div>
-            <Card className="p-6 bg-white/80 backdrop-blur-sm border-blue-200">
-              <h3 className="text-xl text-blue-900 mb-4">Daily Usage Trend</h3>
+
+            {/* Daily Usage Trend chart */}
+            <div style={{ ...cardStyle, padding: "24px" }}>
+              <p className="text-white font-medium mb-6" style={{ fontSize: 16 }}>Daily Usage Trend</p>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={overview?.daily_usage || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
-                  <XAxis dataKey="date" stroke="#3b82f6" />
-                  <YAxis stroke="#3b82f6" />
-                  <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: '1px solid #3b82f6', borderRadius: '8px' }} />
-                  <Legend />
-                  <Line type="monotone" dataKey="total_requests" stroke="#3b82f6" strokeWidth={3} name="Requests" />
-                  <Line type="monotone" dataKey="errors" stroke="#ef4444" strokeWidth={2} name="Errors" />
+                <LineChart data={overview?.daily_usage || []} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                  <XAxis dataKey="date" stroke={C.axis} tick={{ fill: C.axis, fontSize: 12 }} />
+                  <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 12 }} />
+                  <Tooltip contentStyle={C.tooltip} labelStyle={{ color: C.accent }} />
+                  <Legend wrapperStyle={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }} />
+                  <Line type="monotone" dataKey="total_requests" stroke={C.accent} strokeWidth={2.5} dot={false} name="Requests" />
+                  <Line type="monotone" dataKey="errors" stroke={C.red} strokeWidth={2} dot={false} name="Errors" />
                 </LineChart>
               </ResponsiveContainer>
-            </Card>
-          </TabsContent>
-
-          {/* API Analysis */}
-          <TabsContent value="apis" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-blue-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2">
-                  <Target className="w-5 h-5" /> Top 5 APIs by Consumption
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={analysis?.top_5_apis_by_consumption || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
-                    <XAxis dataKey="endpoint" stroke="#3b82f6" angle={-45} textAnchor="end" height={80} />
-                    <YAxis stroke="#3b82f6" />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: '1px solid #3b82f6', borderRadius: '8px' }} />
-                    <Bar dataKey="total_requests" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-red-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-600" /> APIs with Most Errors
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={analysis?.apis_with_most_errors || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#fef2f2" />
-                    <XAxis dataKey="endpoint" stroke="#ef4444" angle={-45} textAnchor="end" height={80} />
-                    <YAxis stroke="#ef4444" />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: '1px solid #ef4444', borderRadius: '8px' }} />
-                    <Bar dataKey="error_requests" fill="#ef4444" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
             </div>
           </TabsContent>
 
-          {/* Temporal */}
-          <TabsContent value="temporal" className="space-y-6">
+          {/* ══ API ANALYSIS ══ */}
+          <TabsContent value="apis" className="space-y-6">
+            <ErrorBanner error={analysisError} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-blue-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2">
-                  <Calendar className="w-5 h-5" /> Daily Request Volume ({timeFilter})
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <AreaChart data={temporalAnalysis?.daily_request_volume || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
-                    <XAxis dataKey="date" stroke="#3b82f6" />
-                    <YAxis stroke="#3b82f6" />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: '1px solid #3b82f6', borderRadius: '8px' }} />
-                    <Area type="monotone" dataKey="total_requests" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <Target style={{ color: C.accent, width: 18, height: 18 }} /> Top 5 APIs by Consumption
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={analysis?.top_5_apis_by_consumption || []} margin={{ top: 5, right: 10, left: 0, bottom: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                    <XAxis dataKey="endpoint" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} angle={-40} textAnchor="end" interval={0} />
+                    <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <Tooltip contentStyle={C.tooltip} />
+                    <Bar dataKey="total_requests" fill={C.accent} radius={[4, 4, 0, 0]} name="Requests" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <AlertTriangle style={{ color: C.red, width: 18, height: 18 }} /> APIs with Most Errors
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={analysis?.apis_with_most_errors || []} margin={{ top: 5, right: 10, left: 0, bottom: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                    <XAxis dataKey="endpoint" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} angle={-40} textAnchor="end" interval={0} />
+                    <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <Tooltip contentStyle={C.tooltip} />
+                    <Bar dataKey="error_requests" fill={C.red} radius={[4, 4, 0, 0]} name="Errors" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* ══ TEMPORAL ══ */}
+          <TabsContent value="temporal" className="space-y-6">
+            <ErrorBanner error={temporalError} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <Calendar style={{ color: C.accent, width: 18, height: 18 }} /> Daily Request Volume ({timeFilter})
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <AreaChart data={temporalAnalysis?.daily_request_volume || []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor={C.accent} stopOpacity={0.35} />
+                        <stop offset="95%" stopColor={C.accent} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                    <XAxis dataKey="date" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <Tooltip contentStyle={C.tooltip} />
+                    <Area type="monotone" dataKey="total_requests" stroke={C.accent} fill="url(#areaGrad)" strokeWidth={2} name="Requests" />
                   </AreaChart>
                 </ResponsiveContainer>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-purple-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-purple-600" /> Hourly Call Distribution
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={temporalAnalysis?.hourly_call_distribution || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3e8ff" />
-                    <XAxis dataKey="hour" stroke="#8b5cf6" />
-                    <YAxis stroke="#8b5cf6" />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: '1px solid #8b5cf6', borderRadius: '8px' }} />
-                    <Bar dataKey="total_requests" fill="#8b5cf6" />
+              </div>
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <Clock style={{ color: C.purple, width: 18, height: 18 }} /> Hourly Call Distribution
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={temporalAnalysis?.hourly_call_distribution || []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                    <XAxis dataKey="hour" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <Tooltip contentStyle={C.tooltip} />
+                    <Bar dataKey="total_requests" fill={C.purple} radius={[4, 4, 0, 0]} name="Requests" />
                   </BarChart>
                 </ResponsiveContainer>
-              </Card>
+              </div>
             </div>
           </TabsContent>
 
-          {/* Clients */}
+          {/* ══ CLIENTS ══ */}
           <TabsContent value="clients" className="space-y-6">
-            <Card className="p-6 bg-white/80 backdrop-blur-sm border-green-200">
-              <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5 text-green-600" /> Top Consumers by API Calls
-              </h3>
+            <ErrorBanner error={clientsError} />
+            <div style={{ ...cardStyle, padding: "24px" }}>
+              <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
+                <Users style={{ color: C.green, width: 18, height: 18 }} /> Top Consumers by API Calls
+              </p>
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={clientsAnalysis?.top_consumers || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0fdf4" />
-                  <XAxis dataKey="client_id" stroke="#10b981" angle={-45} textAnchor="end" height={100} />
-                  <YAxis stroke="#10b981" />
-                  <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: '1px solid #10b981', borderRadius: '8px' }} />
-                  <Bar dataKey="total_requests" fill="#10b981" />
+                <BarChart data={clientsAnalysis?.top_consumers || []} margin={{ top: 5, right: 10, left: 0, bottom: 80 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                  <XAxis dataKey="client_id" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} angle={-45} textAnchor="end" interval={0} />
+                  <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                  <Tooltip contentStyle={C.tooltip} />
+                  <Bar dataKey="total_requests" fill={C.green} radius={[4, 4, 0, 0]} name="Requests" />
                 </BarChart>
               </ResponsiveContainer>
-            </Card>
-          </TabsContent>
-
-          {/* Distribution */}
-          <TabsContent value="distribution" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-blue-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2">
-                  <Globe className="w-5 h-5" /> Geographic Distribution
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie data={distributionAnalysis?.geographic_distribution || []} cx="50%" cy="50%" outerRadius={80} dataKey="count"
-                      label={({ geo, country, percent }: any) => `${geo || country || ''} ${((percent || 0) * 100).toFixed(0)}%`}>
-                      {(distributionAnalysis?.geographic_distribution || []).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-orange-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2">
-                  <Building className="w-5 h-5 text-orange-600" /> Brand Distribution
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie data={distributionAnalysis?.brand_distribution || []} cx="50%" cy="50%" outerRadius={80} dataKey="count"
-                      label={({ brand, percent }: any) => `${brand || ''} ${((percent || 0) * 100).toFixed(0)}%`}>
-                      {(distributionAnalysis?.brand_distribution || []).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-teal-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-teal-600" /> Partner Distribution
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={distributionAnalysis?.partner_distribution || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0fdfa" />
-                    <XAxis dataKey="partner" stroke="#0d9488" />
-                    <YAxis stroke="#0d9488" />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: '1px solid #0d9488', borderRadius: '8px' }} />
-                    <Bar dataKey="count" fill="#0d9488" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-indigo-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2">
-                  <UserCheck className="w-5 h-5 text-indigo-600" /> Team Distribution
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={distributionAnalysis?.team_distribution || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#eef2ff" />
-                    <XAxis dataKey="team" stroke="#4f46e5" />
-                    <YAxis stroke="#4f46e5" />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: '1px solid #4f46e5', borderRadius: '8px' }} />
-                    <Bar dataKey="count" fill="#4f46e5" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
             </div>
           </TabsContent>
 
-          {/* Rankings */}
+          {/* ══ DISTRIBUTION ══ */}
+          <TabsContent value="distribution" className="space-y-6">
+            <ErrorBanner error={distributionError} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* Geographic */}
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <Globe style={{ color: C.accent, width: 18, height: 18 }} /> Geographic Distribution
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie data={distributionAnalysis?.geographic_distribution || []} cx="50%" cy="50%" outerRadius={90} dataKey="count"
+                      label={({ geo, name, percent }: any) => `${geo || name || ""} ${((percent || 0) * 100).toFixed(0)}%`}
+                      labelLine={{ stroke: "rgba(255,255,255,0.25)" }}>
+                      {(distributionAnalysis?.geographic_distribution || []).map((_: any, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={C.tooltip} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Brand */}
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <Building style={{ color: C.orange, width: 18, height: 18 }} /> Brand Distribution
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie data={distributionAnalysis?.brand_distribution || []} cx="50%" cy="50%" outerRadius={90} dataKey="count"
+                      label={({ brand, name, percent }: any) => `${brand || name || ""} ${((percent || 0) * 100).toFixed(0)}%`}
+                      labelLine={{ stroke: "rgba(255,255,255,0.25)" }}>
+                      {(distributionAnalysis?.brand_distribution || []).map((_: any, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={C.tooltip} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Partner */}
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <Briefcase style={{ color: C.accentDim, width: 18, height: 18 }} /> Partner Distribution
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={distributionAnalysis?.partner_distribution || []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                    <XAxis dataKey="partner" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <Tooltip contentStyle={C.tooltip} />
+                    <Bar dataKey="count" fill={C.accentDim} radius={[4, 4, 0, 0]} name="Count" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Team */}
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <UserCheck style={{ color: C.blue, width: 18, height: 18 }} /> Team Distribution
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={distributionAnalysis?.team_distribution || []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                    <XAxis dataKey="team" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                    <Tooltip contentStyle={C.tooltip} />
+                    <Bar dataKey="count" fill={C.blue} radius={[4, 4, 0, 0]} name="Count" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* ══ RANKINGS ══ */}
           <TabsContent value="rankings" className="space-y-6">
+            <ErrorBanner error={rankingsError} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-blue-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2"><Users className="w-5 h-5" /> Top 20 Clients</h3>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {(rankingsAnalysis?.top_20_clients || []).map((client: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">{i + 1}</Badge>
-                        <span className="text-sm text-blue-900">{client.client_id}</span>
+
+              {/* Top 20 Clients */}
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-4 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <Users style={{ color: C.accent, width: 18, height: 18 }} /> Top 20 Clients
+                </p>
+                <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 400 }}>
+                  {(rankingsAnalysis?.top_20_clients || []).map((c: any, i: number) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(0,229,192,0.06)", borderRadius: 6, padding: "7px 10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ background: "rgba(0,229,192,0.15)", color: C.accent, borderRadius: 4, padding: "1px 7px", fontSize: 11, fontWeight: 600 }}>{i + 1}</span>
+                        <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 13 }}>{c.client_id}</span>
                       </div>
-                      <span className="text-sm text-blue-600">{fmt(client.total_requests)}</span>
+                      <span style={{ color: C.accent, fontSize: 13, fontWeight: 500 }}>{fmt(c.total_requests)}</span>
                     </div>
                   ))}
                 </div>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-green-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2"><Target className="w-5 h-5 text-green-600" /> Top 20 APIs Accessed</h3>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {(rankingsAnalysis?.top_20_apis_accessed || []).map((api: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between p-2 bg-green-50 rounded">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">{i + 1}</Badge>
-                        <span className="text-sm text-blue-900 truncate">{api.endpoint}</span>
+              </div>
+
+              {/* Top 20 APIs Accessed */}
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-4 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <Target style={{ color: C.green, width: 18, height: 18 }} /> Top 20 APIs Accessed
+                </p>
+                <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 400 }}>
+                  {(rankingsAnalysis?.top_20_apis_accessed || []).map((a: any, i: number) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(52,211,153,0.07)", borderRadius: 6, padding: "7px 10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                        <span style={{ background: "rgba(52,211,153,0.15)", color: C.green, borderRadius: 4, padding: "1px 7px", fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{i + 1}</span>
+                        <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.endpoint}</span>
                       </div>
-                      <span className="text-sm text-green-600">{fmt(api.total_requests)}</span>
+                      <span style={{ color: C.green, fontSize: 13, fontWeight: 500, flexShrink: 0, marginLeft: 8 }}>{fmt(a.total_requests)}</span>
                     </div>
                   ))}
                 </div>
-              </Card>
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-red-200">
-                <h3 className="text-xl text-blue-900 mb-4 flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-red-600" /> Top 20 Failed APIs</h3>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {(rankingsAnalysis?.top_20_failed_apis || []).map((api: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between p-2 bg-red-50 rounded">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">{i + 1}</Badge>
-                        <span className="text-sm text-blue-900 truncate">{api.endpoint}</span>
+              </div>
+
+              {/* Top 20 Failed APIs */}
+              <div style={{ ...cardStyle, padding: "24px" }}>
+                <p className="text-white font-medium mb-4 flex items-center gap-2" style={{ fontSize: 15 }}>
+                  <AlertTriangle style={{ color: C.red, width: 18, height: 18 }} /> Top 20 Failed APIs
+                </p>
+                <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 400 }}>
+                  {(rankingsAnalysis?.top_20_failed_apis || []).map((a: any, i: number) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(239,68,68,0.07)", borderRadius: 6, padding: "7px 10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                        <span style={{ background: "rgba(239,68,68,0.15)", color: C.red, borderRadius: 4, padding: "1px 7px", fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{i + 1}</span>
+                        <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.endpoint}</span>
                       </div>
-                      <span className="text-sm text-red-600">{fmt(api.error_requests)}</span>
+                      <span style={{ color: C.red, fontSize: 13, fontWeight: 500, flexShrink: 0, marginLeft: 8 }}>{fmt(a.error_requests)}</span>
                     </div>
                   ))}
                 </div>
-              </Card>
+              </div>
+
             </div>
           </TabsContent>
         </Tabs>
 
-        <div className="text-center mt-8">
-          <Button onClick={() => router.back()} className="bg-blue-600 hover:bg-blue-700">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Return to Dashboard
-          </Button>
+        {/* Footer */}
+        <div className="text-center pt-2 pb-4">
+          <button
+            onClick={() => router.back()}
+            style={{ background: "linear-gradient(135deg, #00E5C0, #1ABFA3)", color: "#060E1E", borderRadius: 8, padding: "10px 24px", fontWeight: 600, fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8, border: "none", cursor: "pointer" }}
+          >
+            <ArrowLeft className="w-4 h-4" /> Return to Dashboard
+          </button>
         </div>
       </div>
 
-      {/* AI Concierge — floating bubble bottom-right */}
       <ConciergeBubble fileId={selectedFileId} />
     </div>
   );
