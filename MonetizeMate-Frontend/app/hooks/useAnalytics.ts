@@ -29,14 +29,14 @@ const SWR_OPTIONS = {
   revalidateOnFocus: false,
   revalidateOnReconnect: false,
   shouldRetryOnError: true,
-  errorRetryCount: 3,
-  errorRetryInterval: 2000,
+  errorRetryCount: 5,
+  errorRetryInterval: 3000,
   onErrorRetry: (error: any, _key: string, _config: any, revalidate: any, { retryCount }: { retryCount: number }) => {
     // Never retry on 4xx — these are deterministic failures (auth, bad request).
     if (error?.status >= 400 && error?.status < 500) return;
     // Retry AbortErrors and network errors up to 3 times.
-    if (retryCount >= 3) return;
-    setTimeout(() => revalidate({ retryCount }), 2000);
+    if (retryCount >= 5) return;
+    setTimeout(() => revalidate({ retryCount }), 3000);
   },
 };
 

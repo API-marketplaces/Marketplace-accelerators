@@ -6,32 +6,34 @@ import { ClientsAnalysis } from '@/app/types/ClientsAnalysis';
 import { DistributionAnalysis } from '@/app/types/DistributionAnalysis';
 import { RankingsAnalysis } from '@/app/types/RankingsAnalysis';
 
+const ANALYTICS_TIMEOUT = 120_000; // 2 minutes for analytics calls
+
 export const getAnalyticsOverview = async (id: string | number, timeFilter = '7d'): Promise<AnalyticsOverview> => {
   if (!id) throw new Error('File ID is required');
-  return apiFetch<AnalyticsOverview>(`/api/analytics/overview?fileId=${id}&time_filter=${timeFilter}`);
+  return apiFetch<AnalyticsOverview>(`/api/analytics/overview?fileId=${id}&time_filter=${timeFilter}`, { timeoutMs: ANALYTICS_TIMEOUT });
 };
 
 export const getAnalysis = async (fileId: string | number, timeFilter = '7d'): Promise<Analysis> => {
   if (!fileId) throw new Error('File ID is required');
-  return apiFetch<Analysis>(`/api/analytics/analysis?fileId=${fileId}&time_filter=${timeFilter}`);
+  return apiFetch<Analysis>(`/api/analytics/analysis?fileId=${fileId}&time_filter=${timeFilter}`, { timeoutMs: ANALYTICS_TIMEOUT });
 };
 
 export const getTemporalAnalysis = async (fileId: string | number, timeFilter = '30d'): Promise<TemporalAnalysis> => {
   if (!fileId) throw new Error('File ID is required');
-  return apiFetch<TemporalAnalysis>(`/api/analytics/temporal?fileId=${fileId}&time_filter=${timeFilter}`);
+  return apiFetch<TemporalAnalysis>(`/api/analytics/temporal?fileId=${fileId}&time_filter=${timeFilter}`, { timeoutMs: ANALYTICS_TIMEOUT });
 };
 
 export const getClientsAnalysis = async (fileId: string | number, timeFilter = '7d'): Promise<ClientsAnalysis> => {
   if (!fileId) throw new Error('File ID is required');
-  return apiFetch<ClientsAnalysis>(`/api/analytics/clients?fileId=${fileId}&time_filter=${timeFilter}`);
+  return apiFetch<ClientsAnalysis>(`/api/analytics/clients?fileId=${fileId}&time_filter=${timeFilter}`, { timeoutMs: ANALYTICS_TIMEOUT });
 };
 
 export const getDistributionAnalysis = async (fileId: string | number, timeFilter = '7d'): Promise<DistributionAnalysis> => {
   if (!fileId) throw new Error('File ID is required');
-  return apiFetch<DistributionAnalysis>(`/api/analytics/distribution?fileId=${fileId}&time_filter=${timeFilter}`);
+  return apiFetch<DistributionAnalysis>(`/api/analytics/distribution?fileId=${fileId}&time_filter=${timeFilter}`, { timeoutMs: ANALYTICS_TIMEOUT });
 };
 
 export const getRankingsAnalysis = async (fileId: string | number, timeFilter = '7d'): Promise<RankingsAnalysis> => {
   if (!fileId) throw new Error('File ID is required');
-  return apiFetch<RankingsAnalysis>(`/api/analytics/rankings?fileId=${fileId}&time_filter=${timeFilter}`);
+  return apiFetch<RankingsAnalysis>(`/api/analytics/rankings?fileId=${fileId}&time_filter=${timeFilter}`, { timeoutMs: ANALYTICS_TIMEOUT });
 };

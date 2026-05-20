@@ -1,0 +1,13 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".next{,/**}",
+        ".env.local",
+        ".env*.local",
+        "out{,/**}",
+        "build{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/320d4188-13cb-4626-9239-f8f6b91db973/resourceGroups/api-practice-RG/providers/Microsoft.Web/sites/Monetizemate",
+    "appService.deploySubpath": "."
+}

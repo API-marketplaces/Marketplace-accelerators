@@ -8,12 +8,16 @@ from app.api import prediction_endpoints
 from app.api import questionnaire_endpoints
 from app.api import concierge_endpoints  
 from app.database.database import create_tables
-from fastapi.middleware.cors import CORSMiddleware 
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Application startup: Creating database tables if they don't exist...")
     create_tables()
+    os.makedirs(settings.UPLOAD_DIRECTORY, exist_ok=True)
+    print(f"Upload directory ensured: {settings.UPLOAD_DIRECTORY}")
     print("Database tables checked/created.")
     yield
     print("Application shutdown: Cleaning up resources (if any)...")
@@ -34,9 +38,10 @@ origins = [
     "http://localhost:3002/",
     "http://10.6.122.47:3001",
     "http://10.6.122.47:3001/",
-    # ← Azure Static Web App URL
     "https://salmon-smoke-01c830800.7.azurestaticapps.net",
     "https://salmon-smoke-01c830800.7.azurestaticapps.net/",
+    "https://monetizemate-g7ghavc5chdfe4fn.centralindia-01.azurewebsites.net",
+    "https://monetizemate-g7ghavc5chdfe4fn.centralindia-01.azurewebsites.net/",
 ]
 
 app.add_middleware(

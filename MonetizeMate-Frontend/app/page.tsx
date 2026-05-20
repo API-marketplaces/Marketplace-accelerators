@@ -1,6 +1,9 @@
-import Image from "next/image";
-import HomePage from "./(public)/HomePage";
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
-export default function Home() {
-   return <HomePage />
+export default async function Home() {
+  const cookieStore = await cookies()
+  const session = cookieStore.get(process.env.JWT_COOKIE_NAME || 'session')?.value
+
+  redirect(session ? '/dashboard' : '/login')
 }

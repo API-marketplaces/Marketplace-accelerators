@@ -74,6 +74,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
 # File Uploads
 UPLOAD_DIRECTORY=uploads
+MAX_UPLOAD_SIZE_MB=250
 MODEL_STORAGE_DIR=trained_ml_models
 
 # External APIs
@@ -91,6 +92,7 @@ FRONTEND_URL=http://localhost:3000
 | `DATABASE_URL` | PostgreSQL connection | `postgresql://...localhost...` | Use Azure Database for PostgreSQL |
 | `GROQ_API_KEY` | AI API for concierge | Empty | Required for concierge feature |
 | `UPLOAD_DIRECTORY` | File storage path | `uploads` | Use Azure Blob Storage |
+| `MAX_UPLOAD_SIZE_MB` | Maximum upload size in MB | `250` | Tune for your hosting limits |
 | `MODEL_STORAGE_DIR` | ML models storage | `trained_ml_models` | Use persistent storage |
 
 ## 📚 API Endpoints

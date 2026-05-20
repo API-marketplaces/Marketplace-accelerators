@@ -1,5 +1,6 @@
 import { BackendFile } from '@/app/types/File';
 import { apiFetch } from '../lib/fetcher';
+import { assertFileWithinUploadLimit } from '../constants/upload';
 
 export const getFilesByDecisionMetrics = async (decisionMetrics: string): Promise<BackendFile[]> => {
   try {
@@ -16,6 +17,8 @@ export const uploadFileToBackend = async (
   description: string,
   decisionMetrics: string
 ): Promise<BackendFile> => {
+  assertFileWithinUploadLimit(file);
+
   const formData = new FormData();
   formData.append('file', file);
   formData.append('displayname', displayName);

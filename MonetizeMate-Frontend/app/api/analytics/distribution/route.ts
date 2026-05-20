@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   if (!fileId) return NextResponse.json({ message: 'fileId required' }, { status: 400 });
 
   try {
-    const res = await fetch(`${FASTAPI_URL}/api/v1/rankings/${fileId}?time_filter=${time_filter}`, {
+    const res = await fetch(`${FASTAPI_URL}/api/v1/distribution/${fileId}?time_filter=${time_filter}`, {
       headers: { Authorization: `Bearer ${tokenCookie.value}` },
       // Forward the incoming request signal so that if the browser
       // cancels (user navigates away) the FastAPI call is also cancelled.
@@ -29,12 +29,12 @@ export async function GET(req: NextRequest) {
     });
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (err: any) {
+  } catch (err: unknown) {
     // AbortError means the client cancelled — not a server fault.
-    if (err?.name === 'AbortError') {
+    if (err instanceof DOMException && err.name === 'AbortError') {
       return NextResponse.json({ message: 'Request cancelled' }, { status: 499 });
     }
-    console.error(`[analytics/rankings] error:`, err);
+    console.error(`[analytics/distribution] error:`, err);
     return NextResponse.json({ message: 'Internal error' }, { status: 500 });
   }
 }

@@ -23,7 +23,8 @@ export async function GET(req: Request) {
 
   // Validate token and fetch user info from FastAPI backend
   try {
-    const apiUrl = 'http://localhost:8000/api/v1/users/me';
+    // const apiUrl = 'http://localhost:8000/api/v1/users/me';
+    const apiUrl = `${process.env.FASTAPI_URL || 'http://localhost:8000'}/api/v1/users/me`;
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {

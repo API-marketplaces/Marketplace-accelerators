@@ -18,7 +18,7 @@ import {
 } from "@/app/hooks/useAnalytics";
 import ConciergeBubble from "../../../components/ConciergeBubble";
 
-const fmt = (val: any) => (val != null ? Number(val).toLocaleString("en-US") : "0");
+const fmt = (val: unknown) => (val != null ? Number(val).toLocaleString("en-US") : "0");
 
 // ── Dark-theme chart colours ────────────────────────────────────────────────
 const C = {
@@ -38,19 +38,53 @@ const PIE_COLORS = [C.accent, C.blue, C.purple, C.orange, C.yellow, C.green, "#f
 
 // ── Shared card style ───────────────────────────────────────────────────────
 const cardStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(0,229,192,0.14)",
+  background: `
+    linear-gradient(135deg, rgba(20, 184, 166, 0.18), rgba(15, 23, 42, 0.9) 48%, rgba(22, 163, 74, 0.12)),
+    linear-gradient(rgba(45, 212, 191, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 212, 191, 0.07) 1px, transparent 1px)
+  `,
+  backgroundSize: "auto, 118px 118px, 118px 118px",
+  border: "1px solid rgba(45, 212, 191, 0.2)",
   borderRadius: 12,
+  boxShadow: "0 18px 45px rgba(0, 229, 192, 0.08), inset 0 1px 0 rgba(255,255,255,0.05)",
 };
+
+const distributionCardStyle: React.CSSProperties = {
+  ...cardStyle,
+  minHeight: 360,
+  padding: "24px",
+};
+
+const EmptyChart = ({ message = "No distribution data available" }: { message?: string }) => (
+  <div className="flex h-[260px] items-center justify-center rounded-lg border border-dashed border-teal-300/20 bg-emerald-400/5 text-sm text-white/45">
+    {message}
+  </div>
+);
+
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "Unknown error.";
+
+const ErrorBanner = ({ error }: { error: unknown }) =>
+  error ? (
+    <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 8 }}
+         className="flex items-center gap-2 p-3 mb-4 text-sm text-red-400">
+      <AlertTriangle className="w-4 h-4 shrink-0" />
+      <span>Failed to load data: {getErrorMessage(error)}</span>
+    </div>
+  ) : null;
+
+type GeographicPieLabel = { geo?: string; name?: string; percent?: number };
+type BrandPieLabel = { brand?: string; name?: string; percent?: number };
+type RankedClient = { client_id: string; total_requests: number };
+type RankedApi = { endpoint: string; total_requests: number };
+type FailedApi = { endpoint: string; error_requests: number };
 
 export default function ApiStatsPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const [selectedFileId, setSelectedFileId] = useState<string>(params?.id || "");
+  const selectedFileId = params?.id || "";
   const [timeFilter, setTimeFilter] = useState<string>("7d");
   const [debouncedFilter, setDebouncedFilter] = useState<string>("7d");
 
-  useEffect(() => { if (params.id) setSelectedFileId(params.id); }, [params.id]);
   useEffect(() => {
     const t = setTimeout(() => setDebouncedFilter(timeFilter), 400);
     return () => clearTimeout(t);
@@ -62,15 +96,6 @@ export default function ApiStatsPage() {
   const { clientsAnalysis,   isError: clientsError }                            = useClientsAnalysis(selectedFileId, debouncedFilter);
   const { distributionAnalysis, isError: distributionError }                    = useDistributionAnalysis(selectedFileId, debouncedFilter);
   const { rankingsAnalysis,  isError: rankingsError }                           = useRankingsAnalysis(selectedFileId, debouncedFilter);
-
-  const ErrorBanner = ({ error }: { error: any }) =>
-    error ? (
-      <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 8 }}
-           className="flex items-center gap-2 p-3 mb-4 text-sm text-red-400">
-        <AlertTriangle className="w-4 h-4 shrink-0" />
-        <span>Failed to load data: {error?.message || "Unknown error."}</span>
-      </div>
-    ) : null;
 
   // ── Stat cards ─────────────────────────────────────────────────────────────
   const statCards = [
@@ -265,69 +290,77 @@ export default function ApiStatsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               {/* Geographic */}
-              <div style={{ ...cardStyle, padding: "24px" }}>
+              <div style={distributionCardStyle}>
                 <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
                   <Globe style={{ color: C.accent, width: 18, height: 18 }} /> Geographic Distribution
                 </p>
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie data={distributionAnalysis?.geographic_distribution || []} cx="50%" cy="50%" outerRadius={90} dataKey="count"
-                      label={({ geo, name, percent }: any) => `${geo || name || ""} ${((percent || 0) * 100).toFixed(0)}%`}
-                      labelLine={{ stroke: "rgba(255,255,255,0.25)" }}>
-                      {(distributionAnalysis?.geographic_distribution || []).map((_: any, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={C.tooltip} />
-                  </PieChart>
-                </ResponsiveContainer>
+                {(distributionAnalysis?.geographic_distribution?.length || 0) > 0 ? (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie data={distributionAnalysis?.geographic_distribution || []} cx="50%" cy="50%" outerRadius={90} dataKey="count" nameKey="geo"
+                        label={({ geo, name, percent }: GeographicPieLabel) => `${geo || name || ""} ${((percent || 0) * 100).toFixed(0)}%`}
+                        labelLine={{ stroke: "rgba(255,255,255,0.25)" }}>
+                        {(distributionAnalysis?.geographic_distribution || []).map((_, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip contentStyle={C.tooltip} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : <EmptyChart message="No geographic data available" />}
               </div>
 
               {/* Brand */}
-              <div style={{ ...cardStyle, padding: "24px" }}>
+              <div style={distributionCardStyle}>
                 <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
                   <Building style={{ color: C.orange, width: 18, height: 18 }} /> Brand Distribution
                 </p>
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie data={distributionAnalysis?.brand_distribution || []} cx="50%" cy="50%" outerRadius={90} dataKey="count"
-                      label={({ brand, name, percent }: any) => `${brand || name || ""} ${((percent || 0) * 100).toFixed(0)}%`}
-                      labelLine={{ stroke: "rgba(255,255,255,0.25)" }}>
-                      {(distributionAnalysis?.brand_distribution || []).map((_: any, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={C.tooltip} />
-                  </PieChart>
-                </ResponsiveContainer>
+                {(distributionAnalysis?.brand_distribution?.length || 0) > 0 ? (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie data={distributionAnalysis?.brand_distribution || []} cx="50%" cy="50%" outerRadius={90} dataKey="count" nameKey="brand"
+                        label={({ brand, name, percent }: BrandPieLabel) => `${brand || name || ""} ${((percent || 0) * 100).toFixed(0)}%`}
+                        labelLine={{ stroke: "rgba(255,255,255,0.25)" }}>
+                        {(distributionAnalysis?.brand_distribution || []).map((_, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip contentStyle={C.tooltip} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : <EmptyChart message="No brand data available" />}
               </div>
 
               {/* Partner */}
-              <div style={{ ...cardStyle, padding: "24px" }}>
+              <div style={distributionCardStyle}>
                 <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
                   <Briefcase style={{ color: C.accentDim, width: 18, height: 18 }} /> Partner Distribution
                 </p>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={distributionAnalysis?.partner_distribution || []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
-                    <XAxis dataKey="partner" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
-                    <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
-                    <Tooltip contentStyle={C.tooltip} />
-                    <Bar dataKey="count" fill={C.accentDim} radius={[4, 4, 0, 0]} name="Count" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {(distributionAnalysis?.partner_distribution?.length || 0) > 0 ? (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={distributionAnalysis?.partner_distribution || []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                      <XAxis dataKey="partner" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                      <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                      <Tooltip contentStyle={C.tooltip} />
+                      <Bar dataKey="count" fill={C.accentDim} radius={[4, 4, 0, 0]} name="Count" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <EmptyChart message="No partner data available" />}
               </div>
 
               {/* Team */}
-              <div style={{ ...cardStyle, padding: "24px" }}>
+              <div style={distributionCardStyle}>
                 <p className="text-white font-medium mb-5 flex items-center gap-2" style={{ fontSize: 15 }}>
                   <UserCheck style={{ color: C.blue, width: 18, height: 18 }} /> Team Distribution
                 </p>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={distributionAnalysis?.team_distribution || []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
-                    <XAxis dataKey="team" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
-                    <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
-                    <Tooltip contentStyle={C.tooltip} />
-                    <Bar dataKey="count" fill={C.blue} radius={[4, 4, 0, 0]} name="Count" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {(distributionAnalysis?.team_distribution?.length || 0) > 0 ? (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={distributionAnalysis?.team_distribution || []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                      <XAxis dataKey="team" stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                      <YAxis stroke={C.axis} tick={{ fill: C.axis, fontSize: 11 }} />
+                      <Tooltip contentStyle={C.tooltip} />
+                      <Bar dataKey="count" fill={C.blue} radius={[4, 4, 0, 0]} name="Count" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <EmptyChart message="No team data available" />}
               </div>
             </div>
           </TabsContent>
@@ -343,7 +376,7 @@ export default function ApiStatsPage() {
                   <Users style={{ color: C.accent, width: 18, height: 18 }} /> Top 20 Clients
                 </p>
                 <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 400 }}>
-                  {(rankingsAnalysis?.top_20_clients || []).map((c: any, i: number) => (
+                  {(rankingsAnalysis?.top_20_clients || []).map((c: RankedClient, i: number) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(0,229,192,0.06)", borderRadius: 6, padding: "7px 10px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ background: "rgba(0,229,192,0.15)", color: C.accent, borderRadius: 4, padding: "1px 7px", fontSize: 11, fontWeight: 600 }}>{i + 1}</span>
@@ -361,7 +394,7 @@ export default function ApiStatsPage() {
                   <Target style={{ color: C.green, width: 18, height: 18 }} /> Top 20 APIs Accessed
                 </p>
                 <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 400 }}>
-                  {(rankingsAnalysis?.top_20_apis_accessed || []).map((a: any, i: number) => (
+                  {(rankingsAnalysis?.top_20_apis_accessed || []).map((a: RankedApi, i: number) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(52,211,153,0.07)", borderRadius: 6, padding: "7px 10px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
                         <span style={{ background: "rgba(52,211,153,0.15)", color: C.green, borderRadius: 4, padding: "1px 7px", fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{i + 1}</span>
@@ -379,7 +412,7 @@ export default function ApiStatsPage() {
                   <AlertTriangle style={{ color: C.red, width: 18, height: 18 }} /> Top 20 Failed APIs
                 </p>
                 <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 400 }}>
-                  {(rankingsAnalysis?.top_20_failed_apis || []).map((a: any, i: number) => (
+                  {(rankingsAnalysis?.top_20_failed_apis || []).map((a: FailedApi, i: number) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(239,68,68,0.07)", borderRadius: 6, padding: "7px 10px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
                         <span style={{ background: "rgba(239,68,68,0.15)", color: C.red, borderRadius: 4, padding: "1px 7px", fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{i + 1}</span>

@@ -37,30 +37,30 @@ interface AnomalyTableProps {
 
 export function AnomalyTable({ anomalies }: AnomalyTableProps) {
   return (
-    <Table>
+    <Table className="text-white">
       <TableHeader>
-        <TableRow>
-          <TableHead>Timestamp</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Reason</TableHead>
-          <TableHead>Request Count</TableHead>
-          <TableHead>Response Time</TableHead>
-          <TableHead>CPU Usage</TableHead>
-          <TableHead>Endpoint</TableHead>
-          <TableHead>User ID</TableHead>
+        <TableRow className="border-teal-400/20 hover:bg-transparent">
+          <TableHead className="text-emerald-100/80">Timestamp</TableHead>
+          <TableHead className="text-emerald-100/80">Type</TableHead>
+          <TableHead className="text-emerald-100/80">Reason</TableHead>
+          <TableHead className="text-emerald-100/80">Request Count</TableHead>
+          <TableHead className="text-emerald-100/80">Response Time</TableHead>
+          <TableHead className="text-emerald-100/80">CPU Usage</TableHead>
+          <TableHead className="text-emerald-100/80">Endpoint</TableHead>
+          <TableHead className="text-emerald-100/80">User ID</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {anomalies.map((anomaly, index) => (
-          <TableRow key={index}>
-            <TableCell>{new Date(anomaly.timestamp).toLocaleString()}</TableCell>
-            <TableCell>{anomaly.type}</TableCell>
-            <TableCell>{anomaly.reason}</TableCell>
-            <TableCell>{anomaly.request_count}</TableCell>
-            <TableCell>{anomaly.response_time}</TableCell>
-            <TableCell>{anomaly.cpu_usage}</TableCell>
-            <TableCell>{anomaly.endpoint}</TableCell>
-            <TableCell>{anomaly.user_id}</TableCell>
+          <TableRow key={index} className="border-teal-400/15 hover:bg-emerald-400/5">
+            <TableCell className="text-white/90">{new Date(anomaly.timestamp).toLocaleString()}</TableCell>
+            <TableCell className="font-semibold text-white/90">{anomaly.type}</TableCell>
+            <TableCell className="text-white/90">{anomaly.reason}</TableCell>
+            <TableCell className="text-white/90">{anomaly.request_count}</TableCell>
+            <TableCell className="text-white/90">{anomaly.response_time}</TableCell>
+            <TableCell className="text-white/90">{anomaly.cpu_usage}</TableCell>
+            <TableCell className="font-medium text-white/90">{anomaly.endpoint}</TableCell>
+            <TableCell className="font-medium text-white/90">{anomaly.user_id}</TableCell>
           </TableRow>
         ))}
       </TableBody>

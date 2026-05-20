@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useRef } from "react";
+import { useState, useRef, type MouseEvent } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Badge } from "./ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Textarea } from "./ui/textarea";
 import { Upload, FileText, Download, Trash2, Edit3, Calendar, FileSpreadsheet, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { UploadedFile } from "../types/UploadedFile";
+import { assertFileWithinUploadLimit, formatUploadLimit } from "../constants/upload";
 
 
 interface FileUploadProps {
@@ -67,6 +68,12 @@ export default function FileUpload({
         if (files.length > 0) {
             const file = files[0];
             if (isValidFileType(file)) {
+                try {
+                    assertFileWithinUploadLimit(file);
+                } catch (error) {
+                    alert(error instanceof Error ? error.message : 'File is too large.');
+                    return;
+                }
                 pendingFileRef.current = file;
                 setUploadDisplayName(file.name);
                 setUploadDescription("");
@@ -81,6 +88,12 @@ export default function FileUpload({
         const file = e.target.files?.[0];
         if (file) {
             if (isValidFileType(file)) {
+                try {
+                    assertFileWithinUploadLimit(file);
+                } catch (error) {
+                    alert(error instanceof Error ? error.message : 'File is too large.');
+                    return;
+                }
                 pendingFileRef.current = file;
                 setUploadDisplayName(file.name);
                 setUploadDescription("");
@@ -127,9 +140,9 @@ export default function FileUpload({
                     setUploadDescription("");
                     setShowUploadDialog(false);
                 }
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error('Error uploading file:', error);
-                alert('Error uploading file: ' + (error?.message || 'Unknown error'));
+                alert('Error uploading file: ' + (error instanceof Error ? error.message : 'Unknown error'));
             } finally {
                 setIsUploading(false);
             }
@@ -205,6 +218,9 @@ export default function FileUpload({
                         <h4 className="text-blue-900 mb-2">Drop files here or click to browse</h4>
                         <p className="text-blue-600 text-sm mb-4">
                             Supported formats: {acceptedTypes.join(", ")}
+                        </p>
+                        <p className="text-blue-600 text-xs mb-4">
+                            Maximum file size: {formatUploadLimit()}
                         </p>
                         <Button className="bg-blue-600 hover:bg-blue-700">
                             Choose Files
@@ -283,20 +299,20 @@ export default function FileUpload({
                                                 </div>
 
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild onClick={(e: any) => e.stopPropagation()}>
+                                                    <DropdownMenuTrigger asChild onClick={(e: MouseEvent) => e.stopPropagation()}>
                                                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                                             <MoreVertical className="w-4 h-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={(e: any) => {
+                                                        <DropdownMenuItem onClick={(e: MouseEvent) => {
                                                             e.stopPropagation();
                                                             handleEditFile(file);
                                                         }}>
                                                             <Edit3 className="w-4 h-4 mr-2" />
                                                             Edit Details
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={(e: any) => {
+                                                        <DropdownMenuItem onClick={(e: MouseEvent) => {
                                                             e.stopPropagation();
                                                             onFileDownload(file.id);
                                                         }}>
@@ -304,7 +320,7 @@ export default function FileUpload({
                                                             Download
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
-                                                            onClick={(e: any) => {
+                                                            onClick={(e: MouseEvent) => {
                                                                 e.stopPropagation();
                                                                 if (confirm('Are you sure you want to delete this file?')) {
                                                                     onFileDelete(file.id);

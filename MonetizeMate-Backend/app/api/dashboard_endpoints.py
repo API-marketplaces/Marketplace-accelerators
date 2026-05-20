@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+from typing import Iterable
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 import pandas as pd
@@ -19,11 +20,49 @@ except ImportError:
 
 router = APIRouter()
 
+# Column groups used to keep dashboard reads narrow.
+ENDPOINT_COLUMNS = ["endpoint", "API NAME", "api_name", "api"]
+GEO_COLUMNS = ["geo", "country", "region", "location"]
+
 
 # ─── Shared helpers ────────────────────────────────────────────────────────────
 
-def _load_file(db: Session, file_id: int, current_user: AudienceResponse) -> pd.DataFrame:
-    """Authorise + load a CSV/Excel file into a DataFrame."""
+def _is_safe_upload_path(file_path: str) -> bool:
+    upload_dir_abs = os.path.abspath(settings.UPLOAD_DIRECTORY)
+    candidate = os.path.abspath(file_path)
+    try:
+        return os.path.commonpath([upload_dir_abs, candidate]) == upload_dir_abs
+    except ValueError:
+        return False
+
+
+def _read_dataframe(file_path: str, columns: Iterable[str] | None = None) -> pd.DataFrame:
+    ext = os.path.splitext(file_path)[1].lower()
+    usecols = None
+
+    if columns:
+        wanted = set(columns)
+        header = (
+            pd.read_csv(file_path, nrows=0)
+            if ext == ".csv"
+            else pd.read_excel(file_path, nrows=0)
+        )
+        usecols = [col for col in header.columns if col in wanted]
+        if not usecols:
+            return pd.DataFrame()
+
+    if ext == ".csv":
+        return pd.read_csv(file_path, usecols=usecols)
+    return pd.read_excel(file_path, usecols=usecols)
+
+
+def _load_file(
+    db: Session,
+    file_id: int,
+    current_user: AudienceResponse,
+    columns: Iterable[str] | None = None,
+) -> pd.DataFrame:
+    """Authorise and load only the columns needed for the requested chart."""
     db_file = crud_files.get_file_by_id(db, file_id)
     if not db_file:
         raise HTTPException(status_code=404, detail="File not found in database")
@@ -32,10 +71,9 @@ def _load_file(db: Session, file_id: int, current_user: AudienceResponse) -> pd.
     file_path = db_file.path
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found on disk (metadata exists)")
-    if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
+    if not _is_safe_upload_path(file_path):
         raise HTTPException(status_code=400, detail="Invalid file path")
-    ext = os.path.splitext(file_path)[1].lower()
-    return pd.read_csv(file_path) if ext == ".csv" else pd.read_excel(file_path)
+    return _read_dataframe(file_path, columns=columns)
 
 
 def _require_cols(df: pd.DataFrame, cols: list) -> None:
@@ -45,68 +83,48 @@ def _require_cols(df: pd.DataFrame, cols: list) -> None:
 
 
 def _prepare_timestamps(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Parse the timestamp column to timezone-naive UTC dates.
-    Returns df with a clean 'timestamp' column (datetime64, no tz).
-    """
+    if df.empty:
+        return df
     df = df.copy()
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
-    df["timestamp"] = df["timestamp"].dt.tz_localize(None)   # strip tz → naive UTC
+    df["timestamp"] = df["timestamp"].dt.tz_localize(None)
     df = df.dropna(subset=["timestamp"])
     return df
 
 
 def _apply_time_filter(df: pd.DataFrame, time_filter: str) -> pd.DataFrame:
-    """
-    Filter by timestamp relative to the DATA's own max date (not today).
-    This ensures files with historical data always show results.
-    Falls back to all data if timestamp column is absent.
-    """
-    if "timestamp" not in df.columns:
+    if "timestamp" not in df.columns or df.empty:
         return df
-
     df = _prepare_timestamps(df)
-
+    if df.empty:
+        return df
     days_map = {"1d": 1, "7d": 7, "30d": 30, "90d": 90}
     days = days_map.get(time_filter, 7)
-
-    # Use the data's own latest date as the reference point, not today
     data_end = df["timestamp"].dt.date.max()
     data_start = data_end - timedelta(days=days - 1)
-
     filtered = df[df["timestamp"].dt.date.between(data_start, data_end)]
-
-    # Safety: if filter produces nothing (e.g. "1d" on sparse data), return all
     return filtered if not filtered.empty else df
 
 
 def _detect_endpoint_col(df: pd.DataFrame):
-    """Return the first matching API/endpoint column name, or None."""
-    for candidate in ["endpoint", "API NAME", "api_name", "api"]:
+    for candidate in ENDPOINT_COLUMNS:
         if candidate in df.columns:
             return candidate
     return None
 
 
 def _detect_geo_col(df: pd.DataFrame):
-    """Return the geographic column name (handles 'geo' or 'country')."""
-    for candidate in ["geo", "country", "region", "location"]:
+    for candidate in GEO_COLUMNS:
         if candidate in df.columns:
             return candidate
     return None
 
 
 def _value_counts_to_list(df: pd.DataFrame, col: str, label: str = None) -> list:
-    """
-    Safe value_counts → list of dicts.
-    label: the key to use in the output dict (defaults to col).
-    Compatible with pandas <2 and >=2.
-    """
     if col not in df.columns:
         return []
     out_key = label or col
     vc = df[col].value_counts().reset_index()
-    # pandas >=2: [col, 'count']; pandas <2: ['index', col]
     if "count" in vc.columns:
         vc = vc.rename(columns={col: out_key})
     else:
@@ -114,38 +132,53 @@ def _value_counts_to_list(df: pd.DataFrame, col: str, label: str = None) -> list
     return vc.to_dict("records")
 
 
+def _coerce_numeric(df: pd.DataFrame, columns: Iterable[str]) -> pd.DataFrame:
+    df = df.copy()
+    for col in columns:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    return df
+
+
 # ─── /overview/{file_id} ──────────────────────────────────────────────────────
 
 @router.get("/overview/{file_id}")
-async def overview_endpoint(
+def overview_endpoint(
     file_id: int,
     time_filter: str = Query(default="7d"),
     db: Session = Depends(get_db),
     current_user: AudienceResponse = Depends(get_current_user),
 ):
-    df = _load_file(db, file_id, current_user)
+    df = _load_file(db, file_id, current_user, ["timestamp", "status_code", "requests", "response_time"])
     _require_cols(df, ["timestamp", "status_code", "requests"])
 
+    df = _coerce_numeric(df, ["status_code", "requests", "response_time"])
     df = _prepare_timestamps(df)
+    if df.empty:
+        return {
+            "total_requests": 0,
+            "successful_requests": 0,
+            "errors": 0,
+            "avg_response_time": None,
+            "daily_usage": [],
+        }
 
-    # Compute data-relative date range
     days_map = {"1d": 1, "7d": 7, "30d": 30, "90d": 90}
     days = days_map.get(time_filter, 7)
-    data_end   = df["timestamp"].dt.date.max()
+    data_end = df["timestamp"].dt.date.max()
     data_start = data_end - timedelta(days=days - 1)
 
     df_f = df[df["timestamp"].dt.date.between(data_start, data_end)]
     if df_f.empty:
-        df_f = df   # fallback: show all data
+        df_f = df
 
     total_requests = int(df_f["requests"].sum())
-    successful     = int(df_f[df_f["status_code"] == 200]["requests"].sum())
-    errors         = int(df_f[df_f["status_code"] != 200]["requests"].sum())
+    successful = int(df_f[df_f["status_code"] == 200]["requests"].sum())
+    errors = int(df_f[df_f["status_code"] != 200]["requests"].sum())
     avg_rt = None
     if "response_time" in df_f.columns and not df_f["response_time"].isna().all():
         avg_rt = float(df_f["response_time"].mean())
 
-    # Build daily usage trend for the filtered range
     all_days = [d.date() for d in pd.date_range(data_start, data_end)]
     if not df_f.empty:
         ds = (
@@ -184,17 +217,18 @@ async def overview_endpoint(
 # ─── /analysis/{file_id} ──────────────────────────────────────────────────────
 
 @router.get("/analysis/{file_id}")
-async def analysis_endpoint(
+def analysis_endpoint(
     file_id: int,
     time_filter: str = Query(default="7d"),
     db: Session = Depends(get_db),
     current_user: AudienceResponse = Depends(get_current_user),
 ):
-    df = _load_file(db, file_id, current_user)
+    df = _load_file(db, file_id, current_user, ENDPOINT_COLUMNS + ["requests", "status_code", "timestamp"])
     endpoint_col = _detect_endpoint_col(df)
     if endpoint_col is None:
         raise HTTPException(status_code=422, detail="Missing required column: endpoint (or 'API NAME')")
     _require_cols(df, ["requests", "status_code"])
+    df = _coerce_numeric(df, ["requests", "status_code"])
     df = _apply_time_filter(df, time_filter)
 
     top_5 = (
@@ -209,22 +243,25 @@ async def analysis_endpoint(
     )
     return {
         "top_5_apis_by_consumption": top_5.to_dict("records"),
-        "apis_with_most_errors":     apis_errors.to_dict("records"),
+        "apis_with_most_errors": apis_errors.to_dict("records"),
     }
 
 
 # ─── /temporal/{file_id} ──────────────────────────────────────────────────────
 
 @router.get("/temporal/{file_id}")
-async def temporal_endpoint(
+def temporal_endpoint(
     file_id: int,
     time_filter: str = Query(default="30d"),
     db: Session = Depends(get_db),
     current_user: AudienceResponse = Depends(get_current_user),
 ):
-    df = _load_file(db, file_id, current_user)
+    df = _load_file(db, file_id, current_user, ["timestamp", "requests"])
     _require_cols(df, ["timestamp", "requests"])
+    df = _coerce_numeric(df, ["requests"])
     df = _apply_time_filter(df, time_filter)
+    if df.empty:
+        return {"daily_request_volume": [], "hourly_call_distribution": []}
 
     daily = (
         df.groupby(df["timestamp"].dt.date)["requests"].sum().reset_index()
@@ -249,14 +286,15 @@ async def temporal_endpoint(
 # ─── /clients/{file_id} ───────────────────────────────────────────────────────
 
 @router.get("/clients/{file_id}")
-async def clients_endpoint(
+def clients_endpoint(
     file_id: int,
     time_filter: str = Query(default="7d"),
     db: Session = Depends(get_db),
     current_user: AudienceResponse = Depends(get_current_user),
 ):
-    df = _load_file(db, file_id, current_user)
+    df = _load_file(db, file_id, current_user, ["client_id", "requests", "timestamp"])
     _require_cols(df, ["client_id", "requests"])
+    df = _coerce_numeric(df, ["requests"])
     df = _apply_time_filter(df, time_filter)
 
     top = (
@@ -270,18 +308,17 @@ async def clients_endpoint(
 # ─── /distribution/{file_id} ──────────────────────────────────────────────────
 
 @router.get("/distribution/{file_id}")
-async def distribution_endpoint(
+def distribution_endpoint(
     file_id: int,
     time_filter: str = Query(default="7d"),
     db: Session = Depends(get_db),
     current_user: AudienceResponse = Depends(get_current_user),
 ):
-    df = _load_file(db, file_id, current_user)
+    df = _load_file(db, file_id, current_user, GEO_COLUMNS + ["brand", "partner", "team", "timestamp"])
     df = _apply_time_filter(df, time_filter)
 
-    # FIX: support both "geo" and "country" column names
     geo_col = _detect_geo_col(df)
-    geo_label = "geo"  # always return as "geo" so frontend stays unchanged
+    geo_label = "geo"
 
     geo_dist = []
     if geo_col:
@@ -289,27 +326,27 @@ async def distribution_endpoint(
 
     return {
         "geographic_distribution": geo_dist,
-        "brand_distribution":      _value_counts_to_list(df, "brand"),
-        "partner_distribution":    _value_counts_to_list(df, "partner"),
-        "team_distribution":       _value_counts_to_list(df, "team"),
+        "brand_distribution": _value_counts_to_list(df, "brand"),
+        "partner_distribution": _value_counts_to_list(df, "partner"),
+        "team_distribution": _value_counts_to_list(df, "team"),
     }
 
 
 # ─── /rankings/{file_id} ──────────────────────────────────────────────────────
 
 @router.get("/rankings/{file_id}")
-async def rankings_endpoint(
+def rankings_endpoint(
     file_id: int,
     time_filter: str = Query(default="7d"),
     db: Session = Depends(get_db),
     current_user: AudienceResponse = Depends(get_current_user),
 ):
-    df = _load_file(db, file_id, current_user)
+    df = _load_file(db, file_id, current_user, ENDPOINT_COLUMNS + ["client_id", "requests", "status_code", "timestamp"])
+    df = _coerce_numeric(df, ["requests", "status_code"])
     df = _apply_time_filter(df, time_filter)
 
     endpoint_col = _detect_endpoint_col(df)
 
-    # Top 20 Clients
     clients = []
     if "client_id" in df.columns and "requests" in df.columns:
         clients = (
@@ -318,7 +355,6 @@ async def rankings_endpoint(
             .rename(columns={"requests": "total_requests"}).to_dict("records")
         )
 
-    # Top 20 APIs Accessed
     apis = []
     if endpoint_col and "requests" in df.columns:
         apis = (
@@ -328,7 +364,6 @@ async def rankings_endpoint(
             .to_dict("records")
         )
 
-    # Top 20 Failed APIs
     failed_apis = []
     if endpoint_col and "status_code" in df.columns and "requests" in df.columns:
         err_df = df[df["status_code"] != 200]
@@ -340,7 +375,7 @@ async def rankings_endpoint(
         )
 
     return {
-        "top_20_clients":       clients,
+        "top_20_clients": clients,
         "top_20_apis_accessed": apis,
-        "top_20_failed_apis":   failed_apis,
+        "top_20_failed_apis": failed_apis,
     }

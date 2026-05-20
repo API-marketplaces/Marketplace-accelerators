@@ -1,11 +1,13 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useState, useRef } from 'react'
+import { Suspense, useState, useRef, type MouseEvent } from 'react'
 import { useFileHandler } from '../../hooks/useFileHandler'
-import { useAuth } from '../../hooks/useAuth'
 import UserProfile from '../../components/UserProfile'
 import Link from 'next/link'
+import { ArrowLeft, BarChart3, Brain, Compass, type LucideIcon } from 'lucide-react'
+import { assertFileWithinUploadLimit, formatUploadLimit } from '../../constants/upload'
+import type { UploadedFile } from '../../types/UploadedFile'
 
 const ROUTE_MAP: Record<string, (id: string) => string> = {
   analytics:  (id) => `/dashboard/api-stats/${id}`,
@@ -13,18 +15,25 @@ const ROUTE_MAP: Record<string, (id: string) => string> = {
   strategy:   () => `/dashboard/strategy-adviser`,
 }
 
-const META: Record<string, { heading: string; sub: string; icon: string; color: string }> = {
-  analytics:  { heading: 'API Analytics', sub: 'Analyse usage patterns, errors and response times across your API calls', icon: '⬡', color: '#00E5C0' },
-  prediction: { heading: 'ML Predictions', sub: 'Run anomaly detection and demand forecasting on your API data', icon: '◈', color: '#818cf8' },
-  strategy:   { heading: 'Strategy Advisor', sub: 'Get personalised monetisation recommendations for your APIs', icon: '◎', color: '#f59e0b' },
-}
-
-function getInitials(name?: string, email?: string) {
-  if (name?.trim()) {
-    const p = name.trim().split(/\s+/)
-    return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : p[0].slice(0,2).toUpperCase()
-  }
-  return email?.slice(0,2).toUpperCase() ?? 'U'
+const META: Record<string, { heading: string; sub: string; Icon: LucideIcon; color: string }> = {
+  analytics: {
+    heading: 'API Statistics Analysis',
+    sub: 'Upload your API logs for comprehensive analytics and insights',
+    Icon: BarChart3,
+    color: '#00E5C0',
+  },
+  prediction: {
+    heading: 'AI Prediction Models',
+    sub: 'Upload your historical data for comprehensive ML-powered predictions',
+    Icon: Brain,
+    color: '#818cf8',
+  },
+  strategy: {
+    heading: 'Monetization Strategy Advisor',
+    sub: "Choose how you'd like to get personalized recommendations",
+    Icon: Compass,
+    color: '#00E5C0',
+  },
 }
 
 function formatSize(bytes: number) {
@@ -34,9 +43,9 @@ function formatSize(bytes: number) {
   return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i]
 }
 
-function formatDate(d: any) {
+function formatDate(d: Date | string | number | null | undefined) {
   if (!d) return ''
-  const date = typeof d === 'string' ? new Date(d) : d
+  const date = d instanceof Date ? d : new Date(d)
   if (isNaN(date.getTime())) return ''
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
@@ -45,19 +54,26 @@ function UploadPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const decisionMetrics = searchParams.get('decisionMetrics') || 'analytics'
-  const { user, logout } = useAuth()
-  const { uploadedFiles, handleFileUpload, handleFileDelete, handleFileDownload, handleFileUpdate, isLoading } = useFileHandler(decisionMetrics)
+  const { uploadedFiles, handleFileUpload, handleFileDelete, handleFileDownload, isLoading } = useFileHandler(decisionMetrics)
   const meta = META[decisionMetrics] ?? META.analytics
+  const HeaderIcon = meta.Icon
 
   const [isDrag, setIsDrag] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [displayName, setDisplayName] = useState('')
-  const [openMenu, setOpenMenu] = useState<number | null>(null)
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const openUpload = (file: File) => {
+    try {
+      assertFileWithinUploadLimit(file)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'File is too large.')
+      return
+    }
+
     setPendingFile(file)
     setDisplayName(file.name)
     setShowDialog(true)
@@ -99,13 +115,7 @@ function UploadPageInner() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '1px', height: '32px', background: 'rgba(255,255,255,0.08)' }} />
           <img src="/nagarro-logo.png" alt="Nagarro" style={{ height: '26px', objectFit: 'contain' }} />
-          {user && (
-            <UserProfile
-              user={{ name: user.name || user.email?.split('@')[0] || 'User', email: user.email || '' }}
-              onLogout={() => logout()}
-              onBack={() => router.back()}
-            />
-          )}
+          <UserProfile />
         </div>
       </nav>
 
@@ -113,18 +123,21 @@ function UploadPageInner() {
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '48px 40px 80px' }}>
 
         {/* Back + Title */}
-        <div style={{ marginBottom: '40px' }}>
-          <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: '24px', transition: 'color 0.2s' }}
-            onMouseEnter={(e: any) => e.currentTarget.style.color = '#00E5C0'}
-            onMouseLeave={(e: any) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+        <div style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
+          <Link href="/dashboard" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: meta.color, border: `1px solid ${meta.color}55`, borderRadius: '8px', padding: '9px 14px', transition: 'all 0.2s', flexShrink: 0 }}
+            onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.background = `${meta.color}14`; e.currentTarget.style.borderColor = meta.color }}
+            onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = `${meta.color}55` }}
           >
-            ← Back to Home
+            <ArrowLeft style={{ width: 15, height: 15 }} />
+            Back to Dashboard
           </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: `rgba(${meta.color === '#00E5C0' ? '0,229,192' : meta.color === '#818cf8' ? '129,140,248' : '245,158,11'},0.12)`, border: `1px solid ${meta.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>{meta.icon}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: `rgba(${meta.color === '#00E5C0' ? '0,229,192' : '129,140,248'},0.12)`, border: `1px solid ${meta.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: meta.color }}>
+              <HeaderIcon style={{ width: 24, height: 24 }} />
+            </div>
             <div>
-              <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#fff', letterSpacing: '-0.5px', marginBottom: '4px' }}>{meta.heading}</h1>
-              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.5' }}>{meta.sub}</p>
+              <h1 style={{ fontSize: '25px', fontWeight: '700', color: '#fff', letterSpacing: '-0.4px', marginBottom: '2px' }}>{meta.heading}</h1>
+              <p style={{ fontSize: '14px', color: meta.color, lineHeight: '1.5' }}>{meta.sub}</p>
             </div>
           </div>
         </div>
@@ -158,6 +171,7 @@ function UploadPageInner() {
               <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: `rgba(${meta.color === '#00E5C0' ? '0,229,192' : meta.color === '#818cf8' ? '129,140,248' : '245,158,11'},0.1)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '26px' }}>📤</div>
               <div style={{ fontSize: '15px', fontWeight: '600', color: '#fff', marginBottom: '8px' }}>Drop your file here</div>
               <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>or click to browse files</div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.28)', marginBottom: '16px' }}>Maximum file size: {formatUploadLimit()}</div>
               <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginBottom: '20px' }}>
                 {['.csv', '.xlsx', '.xls'].map(t => <span key={t} style={{ fontSize: '11px', fontWeight: '600', color: meta.color, background: `rgba(${meta.color === '#00E5C0' ? '0,229,192' : '129,140,248'},0.08)`, border: `1px solid ${meta.color}25`, borderRadius: '100px', padding: '3px 10px' }}>{t}</span>)}
               </div>
@@ -191,7 +205,7 @@ function UploadPageInner() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '460px', overflowY: 'auto', paddingRight: '4px' }}>
-                {uploadedFiles.map((file: any) => (
+                {uploadedFiles.map((file: UploadedFile) => (
                   <div
                     key={file.id}
                     onClick={() => handleSelect(String(file.id))}

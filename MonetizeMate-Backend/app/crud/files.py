@@ -35,11 +35,14 @@ def get_file_by_id(db: Session, file_id: int):
         file.decisionMetrics = None
     return file
 
-def get_files_by_owner(db: Session, owner_id: int, skip: int = 0, limit: int = 100):
+def get_files_by_owner(db: Session, owner_id: int, skip: int = 0, limit: int | None = 100):
     """
     Retrieves a list of file metadata records for a specific owner.
     """
-    files = db.query(models.File).filter(models.File.audience_id == owner_id).offset(skip).limit(limit).all()
+    query = db.query(models.File).filter(models.File.audience_id == owner_id).offset(skip)
+    if limit is not None:
+        query = query.limit(limit)
+    files = query.all()
     for file in files:
         if file.decision_metrics:
             file.decisionMetrics = file.decision_metrics
@@ -57,3 +60,14 @@ def delete_file_record(db: Session, file_id: int):
         db.delete(db_file)
         db.commit()
     return db_file
+
+def delete_files_by_owner(db: Session, owner_id: int):
+    """
+    Deletes all file metadata records for a specific owner.
+    Returns the deleted records so callers can clean up files on disk.
+    """
+    db_files = db.query(models.File).filter(models.File.audience_id == owner_id).all()
+    for db_file in db_files:
+        db.delete(db_file)
+    db.commit()
+    return db_files

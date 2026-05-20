@@ -9,7 +9,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:root@localhost:5432/monetize_mate")
     # DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://ApiIntegrationPostgresAdmin:PgAdmin%4012345@postgresazureinternal.postgres.database.azure.com:5432/monetize_mate?sslmode=require")
-    UPLOAD_DIRECTORY: str = "uploads"
+    # UPLOAD_DIRECTORY: str = "uploads"
+    UPLOAD_DIRECTORY: str = os.getenv("UPLOAD_DIRECTORY", "/home/data/uploads")
+    MAX_UPLOAD_SIZE_MB: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "250"))
     MODEL_STORAGE_DIR: str = "trained_ml_models"
     GROQ_API_KEY: str = ""  # ← add this line
     FRONTEND_URL: List[str] = Field(default=["http://localhost:3000"])
