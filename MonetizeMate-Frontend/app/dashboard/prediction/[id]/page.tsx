@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { ArrowLeft, AlertTriangle, BarChart, LineChart, PieChart, TrendingUp, Users, Gauge, ShieldAlert, Clock } from 'lucide-react';
@@ -22,12 +21,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../../../components/ui/chart';
-import { PredictionData, Anomaly } from '../../../types/prediction';
+import { ChartContainer, ChartTooltipContent } from '../../../components/ui/chart';
+import { PredictionData } from '../../../types/prediction';
 import { getPredictionData } from '../../../services/prediction.service';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table';
 import { Progress } from '../../../components/ui/progress';
 import { AnomalyTable } from '@/app/components/AnomalyTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 
 const panelClass = "bg-[#102235]/95 border-teal-400/20 text-white shadow-[0_18px_55px_rgba(0,229,192,0.08)]";
 const nestedPanelClass = "bg-[#183247]/85 border-teal-400/20 text-white";
@@ -45,6 +45,7 @@ export default function PredictionResultPage() {
   const [data, setData] = useState<PredictionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timeFilter, setTimeFilter] = useState<string>("7d");
 
   useEffect(() => {
     if (fileId) {
@@ -57,15 +58,6 @@ export default function PredictionResultPage() {
         .finally(() => setLoading(false));
     }
   }, [fileId]);
-
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
-      case 'High': return 'destructive';
-      case 'Medium': return 'secondary';
-      case 'Low': return 'outline';
-      default: return 'default';
-    }
-  };
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -91,21 +83,36 @@ export default function PredictionResultPage() {
     return null;
   }
 
+  const daysByFilter: Record<string, number> = { "1d": 1, "7d": 7, "30d": 30, "90d": 90 };
+  const predictionWindow = daysByFilter[timeFilter] ?? 7;
+  const futurePredictions = (data.futureVolume?.predictions ?? []).slice(0, predictionWindow);
+
   return (
     <div className="prediction-page min-h-screen bg-[#071527] p-8 text-white">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="outline" onClick={() => router.push('/dashboard/upload')} className="border-teal-400/30 bg-[#00E5C0] text-[#061523] hover:bg-[#5eead4]">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Uploads
-          </Button>
+        <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
           <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={() => router.push('/dashboard/upload?decisionMetrics=prediction')} className="border-teal-400/30 bg-[#00E5C0] text-[#061523] hover:bg-[#5eead4]">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Uploads
+            </Button>
             <TrendingUp className="w-8 h-8 text-[#00E5C0]" />
             <div>
               <h1 className="text-2xl text-white">Prediction Analysis</h1>
-              <p className="text-emerald-100/80">Results for file ID: {fileId}</p>
+              <p className="text-emerald-100/80">Forecasting, anomaly detection, and usage insights</p>
             </div>
           </div>
+          <Select value={timeFilter} onValueChange={setTimeFilter}>
+            <SelectTrigger style={{ width: 140, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(0,229,192,0.25)", color: "#fff" }}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent style={{ background: "#0A1628", border: "1px solid rgba(0,229,192,0.25)", color: "#fff" }}>
+              <SelectItem value="1d">Last 24h</SelectItem>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -185,7 +192,7 @@ export default function PredictionResultPage() {
             <CardContent>
               <ChartContainer config={{}} className="h-80 w-full">
                 <ResponsiveContainer>
-                  <RechartsAreaChart data={data.futureVolume?.predictions ?? []}>
+                  <RechartsAreaChart data={futurePredictions}>
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
                     <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tick={chartAxis} />
                     <YAxis tick={chartAxis} axisLine={{ stroke: "rgba(236,253,245,0.35)" }} tickLine={{ stroke: "rgba(236,253,245,0.25)" }} />
@@ -303,6 +310,15 @@ export default function PredictionResultPage() {
             </CardContent>
           </Card>
 
+        </div>
+
+        <div className="text-center pt-8 pb-4">
+          <button
+            onClick={() => router.push('/dashboard')}
+            style={{ background: "linear-gradient(135deg, #00E5C0, #1ABFA3)", color: "#060E1E", borderRadius: 8, padding: "10px 24px", fontWeight: 600, fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8, border: "none", cursor: "pointer" }}
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          </button>
         </div>
       </div>
       <style>{`

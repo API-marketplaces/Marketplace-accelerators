@@ -26,7 +26,7 @@ const META: Record<string, { heading: string; sub: string; Icon: LucideIcon; col
     heading: 'AI Prediction Models',
     sub: 'Upload your historical data for comprehensive ML-powered predictions',
     Icon: Brain,
-    color: '#818cf8',
+    color: '#00E5C0',
   },
   strategy: {
     heading: 'Monetization Strategy Advisor',
@@ -64,6 +64,7 @@ function UploadPageInner() {
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const openUpload = (file: File) => {
@@ -88,6 +89,7 @@ function UploadPageInner() {
         setShowDialog(false)
         setPendingFile(null)
         setDisplayName('')
+        setSelectedFileId(result.id)
       }
     } finally {
       setUploading(false)
@@ -98,6 +100,8 @@ function UploadPageInner() {
     const dest = ROUTE_MAP[decisionMetrics]
     if (dest) router.push(dest(id))
   }
+
+  const selectedFile = uploadedFiles.find(file => file.id === selectedFileId) || null
 
   return (
     <div style={{ minHeight: '100vh', background: '#070F1F', fontFamily: "'DM Sans', system-ui, sans-serif", color: '#fff' }}>
@@ -144,7 +148,7 @@ function UploadPageInner() {
 
         {/* Steps */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginBottom: '40px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '16px 24px' }}>
-          {['Upload your file', 'Click to select', 'View results'].map((step, i) => (
+          {['Upload your file', 'Start analysis', 'View results'].map((step, i) => (
             <div key={step} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: i === 0 ? `linear-gradient(135deg, ${meta.color}, #1ABFA3)` : 'rgba(255,255,255,0.06)', border: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: i === 0 ? '#060E1E' : 'rgba(255,255,255,0.3)', flexShrink: 0 }}>{i + 1}</div>
@@ -182,7 +186,7 @@ function UploadPageInner() {
             {/* Tip */}
             <div style={{ marginTop: '16px', padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
               <span style={{ fontSize: '16px', flexShrink: 0 }}>💡</span>
-              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.6', margin: 0 }}>After uploading, click any file in the list on the right to proceed to analysis. Large files may take a moment to process.</p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.6', margin: 0 }}>After uploading, click Start Analysis on any file in the list to view results. Large files may take a moment to process.</p>
             </div>
           </div>
 
@@ -208,10 +212,14 @@ function UploadPageInner() {
                 {uploadedFiles.map((file: UploadedFile) => (
                   <div
                     key={file.id}
-                    onClick={() => handleSelect(String(file.id))}
-                    style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', transition: 'all 0.18s', position: 'relative' }}
+                    onClick={() => setSelectedFileId(file.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderRadius: '12px', background: selectedFileId === file.id ? `rgba(${meta.color === '#00E5C0' ? '0,229,192' : '129,140,248'},0.09)` : 'rgba(255,255,255,0.03)', border: selectedFileId === file.id ? `1px solid ${meta.color}70` : '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', transition: 'all 0.18s', position: 'relative', boxShadow: selectedFileId === file.id ? `0 0 0 1px ${meta.color}25, 0 14px 36px rgba(0,229,192,0.08)` : 'none' }}
                     onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.background = `rgba(${meta.color === '#00E5C0' ? '0,229,192' : '129,140,248'},0.06)`; el.style.borderColor = `${meta.color}30` }}
-                    onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.background = 'rgba(255,255,255,0.03)'; el.style.borderColor = 'rgba(255,255,255,0.07)' }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLDivElement
+                      el.style.background = selectedFileId === file.id ? `rgba(${meta.color === '#00E5C0' ? '0,229,192' : '129,140,248'},0.09)` : 'rgba(255,255,255,0.03)'
+                      el.style.borderColor = selectedFileId === file.id ? `${meta.color}70` : 'rgba(255,255,255,0.07)'
+                    }}
                   >
                     {/* Icon */}
                     <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
@@ -226,8 +234,9 @@ function UploadPageInner() {
                         ))}
                       </div>
                     </div>
-                    {/* Analyse CTA */}
-                    <div style={{ fontSize: '11px', fontWeight: '600', color: meta.color, background: `rgba(${meta.color === '#00E5C0' ? '0,229,192' : '129,140,248'},0.08)`, padding: '4px 10px', borderRadius: '100px', whiteSpace: 'nowrap', flexShrink: 0 }}>Analyse →</div>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: selectedFileId === file.id ? '#060E1E' : meta.color, background: selectedFileId === file.id ? `linear-gradient(135deg, ${meta.color}, #1ABFA3)` : `rgba(${meta.color === '#00E5C0' ? '0,229,192' : '129,140,248'},0.08)`, padding: '5px 10px', borderRadius: '100px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {selectedFileId === file.id ? 'Selected' : 'Select'}
+                    </div>
                     {/* Menu */}
                     <div style={{ flexShrink: 0 }} onClick={e => { e.stopPropagation(); setOpenMenu(openMenu === file.id ? null : file.id) }}>
                       <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: '4px 6px', borderRadius: '6px', fontSize: '16px' }}>⋮</button>
@@ -247,6 +256,16 @@ function UploadPageInner() {
                     </div>
                   </div>
                 ))}
+                {selectedFile && (
+                  <div style={{ marginTop: '10px', padding: '14px 16px', borderRadius: '14px', background: 'rgba(0,229,192,0.08)', border: `1px solid ${meta.color}40`, boxShadow: '0 18px 55px rgba(0,229,192,0.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <button
+                      onClick={() => handleSelect(selectedFile.id)}
+                      style={{ fontSize: '13px', fontWeight: '800', color: '#060E1E', background: `linear-gradient(135deg, ${meta.color}, #1ABFA3)`, border: 'none', padding: '11px 18px', borderRadius: '12px', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer', boxShadow: '0 0 24px rgba(0,229,192,0.35)' }}
+                    >
+                      Start Analysis →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -113,10 +113,10 @@ export default function ApiStatsPage() {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push('/dashboard/upload?decisionMetrics=analytics')}
               style={{ background: "rgba(0,229,192,0.1)", border: "1px solid rgba(0,229,192,0.35)", color: C.accent, borderRadius: 8, padding: "8px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}
             >
-              <ArrowLeft className="w-4 h-4" /> Back to File Selection
+              <ArrowLeft className="w-4 h-4" /> Back to Uploads
             </button>
             <div>
               <h1 className="text-2xl font-semibold text-white">API Analytics Dashboard</h1>
@@ -431,10 +431,10 @@ export default function ApiStatsPage() {
         {/* Footer */}
         <div className="text-center pt-2 pb-4">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/dashboard')}
             style={{ background: "linear-gradient(135deg, #00E5C0, #1ABFA3)", color: "#060E1E", borderRadius: 8, padding: "10px 24px", fontWeight: 600, fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8, border: "none", cursor: "pointer" }}
           >
-            <ArrowLeft className="w-4 h-4" /> Return to Dashboard
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </button>
         </div>
       </div>
