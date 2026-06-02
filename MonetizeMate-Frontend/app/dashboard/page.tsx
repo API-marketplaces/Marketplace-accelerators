@@ -102,7 +102,6 @@ export default function DashboardPage() {
         </div>
 
         <section className="welcome-panel" aria-labelledby="welcome-title">
-          <p className="dashboard-kicker">Start Here</p>
           <h2 id="welcome-title">Welcome to MonetizeMate</h2>
           <p>
             Start with the Monetization Strategy Advisor, then use analytics and prediction tools

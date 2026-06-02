@@ -36,6 +36,17 @@ const META: Record<string, { heading: string; sub: string; Icon: LucideIcon; col
   },
 }
 
+const SAMPLE_DATA: Record<string, { filename: string; label: string }> = {
+  analytics: {
+    filename: 'API Logs Data_API_Statistics.xlsx',
+    label: 'API Statistics',
+  },
+  prediction: {
+    filename: 'API Monitoring Data_Prediction_Model.xlsx',
+    label: 'Prediction Model',
+  },
+}
+
 function formatSize(bytes: number) {
   if (!bytes) return '—'
   const k = 1024, sizes = ['B','KB','MB','GB']
@@ -56,10 +67,12 @@ function UploadPageInner() {
   const decisionMetrics = searchParams.get('decisionMetrics') || 'analytics'
   const { uploadedFiles, handleFileUpload, handleFileDelete, handleFileDownload, isLoading } = useFileHandler(decisionMetrics)
   const meta = META[decisionMetrics] ?? META.analytics
+  const sampleData = SAMPLE_DATA[decisionMetrics]
   const HeaderIcon = meta.Icon
 
   const [isDrag, setIsDrag] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [usingSample, setUsingSample] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [displayName, setDisplayName] = useState('')
@@ -94,6 +107,42 @@ function UploadPageInner() {
     } finally {
       setUploading(false)
     }
+  }
+
+  const useSampleData = async () => {
+    if (!sampleData) return
+
+    setUsingSample(true)
+    try {
+      const response = await fetch(`/api/sample-data/${decisionMetrics}`)
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ message: 'Sample data could not be loaded.' }))
+        throw new Error(data.message || 'Sample data could not be loaded.')
+      }
+
+      const blob = await response.blob()
+      const file = new File([blob], sampleData.filename, { type: blob.type })
+      const result = await handleFileUpload(file, `${sampleData.label} Sample Data`, 'Uploaded from sample data')
+
+      if (result) {
+        setSelectedFileId(result.id)
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Sample data could not be used.')
+    } finally {
+      setUsingSample(false)
+    }
+  }
+
+  const downloadSampleData = () => {
+    if (!sampleData) return
+
+    const link = document.createElement('a')
+    link.href = `/api/sample-data/${decisionMetrics}`
+    link.download = sampleData.filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   }
 
   const handleSelect = (id: string) => {
@@ -182,6 +231,31 @@ function UploadPageInner() {
               <button style={{ background: `linear-gradient(135deg, ${meta.color}, #1ABFA3)`, border: 'none', color: '#060E1E', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>Choose File</button>
             </div>
             <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) openUpload(f); e.target.value = '' }} />
+
+            {sampleData && (
+              <div style={{ marginTop: '14px', padding: '14px', borderRadius: '12px', background: 'rgba(0,229,192,0.05)', border: `1px solid ${meta.color}25` }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(255,255,255,0.72)', marginBottom: '10px' }}>
+                  Try with {sampleData.label} sample data
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={useSampleData}
+                    disabled={usingSample}
+                    style={{ flex: '1 1 150px', minHeight: '36px', border: 'none', borderRadius: '9px', background: `linear-gradient(135deg, ${meta.color}, #1ABFA3)`, color: '#060E1E', fontSize: '12px', fontWeight: '800', cursor: usingSample ? 'default' : 'pointer', opacity: usingSample ? 0.72 : 1 }}
+                  >
+                    {usingSample ? 'Using sample...' : 'Use Sample Data'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadSampleData}
+                    style={{ flex: '1 1 170px', minHeight: '36px', border: `1px solid ${meta.color}55`, borderRadius: '9px', background: 'rgba(255,255,255,0.03)', color: meta.color, fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
+                  >
+                    Download Sample Data
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Tip */}
             <div style={{ marginTop: '16px', padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>

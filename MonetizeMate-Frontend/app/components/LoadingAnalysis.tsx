@@ -10,7 +10,7 @@ interface LoadingAnalysisProps {
     progressValue?: number;
 }
 
-const LoadingAnalysis: React.FC<LoadingAnalysisProps> = ({ title, description, steps }) => {
+const LoadingAnalysis: React.FC<LoadingAnalysisProps> = ({ title, description, steps, progressValue = 75 }) => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8 flex items-center justify-center">
             <Card className="p-12 max-w-md text-center bg-white/80 backdrop-blur-sm border-blue-200">
@@ -21,9 +21,9 @@ const LoadingAnalysis: React.FC<LoadingAnalysisProps> = ({ title, description, s
                     {steps}
                 </div>
                 <div className="mt-6">
-                    <Progress value={75} className="h-2" />
+                    <Progress value={progressValue} className="h-2" />
                     <p className="text-xs text-blue-500 mt-2">
-                        {title.includes("Generating") ? "Generation" : "Analysis"} Progress: 75%
+                        {title.includes("Generating") ? "Generation" : "Analysis"} Progress: {progressValue}%
                     </p>
                 </div>
             </Card>
@@ -51,9 +51,19 @@ export const QuestionnaireAnalysisSteps = ({ industry }: { industry: string }) =
     </>
 );
 
-export const GeneratingRecommendationsSteps = ({ analysisSource, fileName, industry }: { analysisSource: 'file' | 'manual', fileName: string, industry: string }) => (
+export const GeneratingRecommendationsSteps = ({
+    analysisSource,
+    fileName,
+    industry,
+    sourceLabel = 'questionnaire responses'
+}: {
+    analysisSource: 'file' | 'manual',
+    fileName: string,
+    industry: string,
+    sourceLabel?: string
+}) => (
     <>
-        <p>✓ {analysisSource === 'file' ? `Processing ${fileName}` : `Analyzing ${industry} questionnaire responses`}</p>
+        <p>✓ {analysisSource === 'file' ? `Processing ${fileName}` : `Analyzing ${industry} ${sourceLabel}`}</p>
         <p>✓ Evaluating business characteristics and market fit</p>
         <p>✓ Calculating strategy compatibility scores</p>
         <p>⏳ Generating detailed implementation plans</p>

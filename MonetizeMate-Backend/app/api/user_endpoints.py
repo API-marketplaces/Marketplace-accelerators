@@ -5,7 +5,7 @@ from datetime import timedelta
 
 # Local imports from the application's modules
 from app.database.database import get_db
-from app.schemas.audience import AudienceCreate, AudienceResponse, Token
+from app.schemas.audience import AudienceCreate, AudienceResponse, PasswordResetRequest, Token
 from app.crud import audiences as crud_users
 from app.core.security import authenticate_user, create_access_token, get_current_user
 from app.core.config import settings
@@ -27,6 +27,19 @@ def register_user(user: AudienceCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
     return crud_users.create_user(db=db, user=user)
+
+@router.post("/forgot-password")
+def forgot_password(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    """
+    Resets a user's password after validating the account email.
+    """
+    db_user = crud_users.update_user_password(db=db, email=payload.email, password=payload.password)
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found for this email"
+        )
+    return {"ok": True, "message": "Password updated successfully"}
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):

@@ -42,7 +42,11 @@ export default function SignUpPage() {
     }
     setError(null);
     try {
-      await signup(formData);
+      await signup({
+        ...formData,
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password.trim(),
+      });
       router.push('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -203,12 +207,6 @@ export default function SignUpPage() {
           </div>
         </Card>
 
-        {/* Demo Notice */}
-        <div className="mt-6 p-4 bg-blue-100 rounded-lg border border-blue-200">
-          <p className="text-blue-800 text-sm text-center">
-            <strong>Demo Mode:</strong> Click &quot;Create Account&quot; to explore the platform
-          </p>
-        </div>
       </div>
     </div>
   );

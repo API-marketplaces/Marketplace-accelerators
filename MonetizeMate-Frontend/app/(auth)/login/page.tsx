@@ -11,9 +11,11 @@ import {
   AlertCircle,
   BarChart3,
   Brain,
+  CheckCircle2,
   Compass,
   Eye,
   EyeOff,
+  KeyRound,
   Lock,
   Mail,
 } from 'lucide-react'
@@ -39,18 +41,24 @@ const FEATURE_PREVIEW = [
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, loggingIn } = useAuth()
+  const { login, loggingIn, resetPassword, resettingPassword } = useAuth()
+  const [mode, setMode] = useState<'login' | 'reset'>('login')
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [resetEmail, setResetEmail] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
+    setSuccess(null)
 
     try {
-      await login({ email, password })
+      await login({ email: email.trim().toLowerCase(), password: password.trim() })
       const params = new URLSearchParams(window.location.search)
       const redirectTo = params.get('redirectTo') || '/dashboard'
       router.push(redirectTo)
@@ -58,6 +66,41 @@ export default function LoginPage() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.')
     }
+  }
+
+  const handleResetSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(null)
+    setSuccess(null)
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    if (newPassword.trim().length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+
+    try {
+      await resetPassword({ email: resetEmail.trim().toLowerCase(), password: newPassword.trim() })
+      setEmail(resetEmail.trim().toLowerCase())
+      setPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setMode('login')
+      setSuccess('Password updated. Sign in with your new password.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unable to reset password.')
+    }
+  }
+
+  const openResetForm = () => {
+    setResetEmail(email.trim().toLowerCase())
+    setError(null)
+    setSuccess(null)
+    setMode('reset')
   }
 
   return (
@@ -100,69 +143,149 @@ export default function LoginPage() {
 
         <Card className="signin-card">
           <div className="card-heading">
-            <h2>Welcome Back</h2>
-            <p>Sign in to continue to MonetizeMate</p>
+            <h2>{mode === 'login' ? 'Welcome Back' : 'Reset Password'}</h2>
+            <p>{mode === 'login' ? 'Sign in to continue to MonetizeMate' : 'Create a new password for your account'}</p>
           </div>
 
-          <form className="signin-form" onSubmit={handleSubmit}>
+          <form className="signin-form" onSubmit={mode === 'login' ? handleSubmit : handleResetSubmit}>
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+            {success && (
+              <Alert>
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
 
-            <div className="field-group">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="input-wrap">
-                <Mail aria-hidden="true" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                />
-              </div>
-            </div>
+            {mode === 'login' ? (
+              <>
+                <div className="field-group">
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="input-wrap">
+                    <Mail aria-hidden="true" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
 
-            <div className="field-group">
-              <Label htmlFor="password">Password</Label>
-              <div className="input-wrap">
-                <Lock aria-hidden="true" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                />
+                <div className="field-group">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="input-wrap">
+                    <Lock aria-hidden="true" />
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      className="password-toggle"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <label>
+                    <input type="checkbox" />
+                    <span>Remember me</span>
+                  </label>
+                  <button type="button" className="link-button" onClick={openResetForm}>
+                    Forgot password?
+                  </button>
+                </div>
+
+                <Button type="submit" className="signin-submit" disabled={loggingIn}>
+                  {loggingIn ? 'Signing In...' : 'Sign In'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="field-group">
+                  <Label htmlFor="reset-email">Email Address</Label>
+                  <div className="input-wrap">
+                    <Mail aria-hidden="true" />
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={resetEmail}
+                      onChange={(event) => setResetEmail(event.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="field-group">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <div className="input-wrap">
+                    <KeyRound aria-hidden="true" />
+                    <Input
+                      id="new-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter a new password"
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      className="password-toggle"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="field-group">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <div className="input-wrap">
+                    <Lock aria-hidden="true" />
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      placeholder="Confirm your new password"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" className="signin-submit" disabled={resettingPassword}>
+                  {resettingPassword ? 'Updating Password...' : 'Update Password'}
+                </Button>
+
                 <button
                   type="button"
-                  onClick={() => setShowPassword((visible) => !visible)}
-                  className="password-toggle"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="link-button back-to-login"
+                  onClick={() => {
+                    setMode('login')
+                    setError(null)
+                  }}
                 >
-                  {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                  Back to sign in
                 </button>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <label>
-                <input type="checkbox" />
-                <span>Remember me</span>
-              </label>
-              <button type="button" className="link-button">
-                Forgot password?
-              </button>
-            </div>
-
-            <Button type="submit" className="signin-submit" disabled={loggingIn}>
-              {loggingIn ? 'Signing In...' : 'Sign In'}
-            </Button>
+              </>
+            )}
           </form>
 
           <p className="signup-link">
@@ -458,6 +581,11 @@ export default function LoginPage() {
         .link-button:hover,
         .signup-link button:hover {
           text-decoration: underline;
+        }
+
+        .back-to-login {
+          width: fit-content;
+          justify-self: center;
         }
 
         .signin-submit {

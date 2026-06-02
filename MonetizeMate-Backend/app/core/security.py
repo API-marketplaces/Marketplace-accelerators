@@ -26,6 +26,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/token")
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against a hashed password."""
     # prefer CryptContext verification, fallback to pbkdf2_sha256
+    plain_password = plain_password.strip()
     try:
         return pwd_context.verify(plain_password, hashed_password)
     except Exception:
@@ -33,7 +34,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     """Hash a plain password using pbkdf2_sha256."""
-    return pbkdf2_sha256.hash(password)
+    return pbkdf2_sha256.hash(password.strip())
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """

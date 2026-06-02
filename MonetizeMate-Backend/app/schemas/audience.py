@@ -58,6 +58,14 @@ class AudienceUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100, example="Jane D.", description="New full name.")
     is_active: Optional[bool] = Field(None, description="Update active status.")
     password: Optional[str] = Field(None, min_length=8, description="New plain text password.")
+
+class PasswordResetRequest(BaseModel):
+    """
+    Schema for resetting a password from the forgot-password flow.
+    """
+    email: EmailStr = Field(..., example="jane.doe@example.com", description="Email address of the user.")
+    password: str = Field(..., min_length=8, example="NewSecureP@ssw0rd!", description="New password.")
+
 class Token(BaseModel):
     """
     Schema for an OAuth2 token response.

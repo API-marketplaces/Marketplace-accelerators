@@ -7,16 +7,19 @@ const MAX_AGE = Number(process.env.JWT_COOKIE_MAX_AGE ?? 86400)
 
 export async function POST(req: Request) {
   const body = await req.json()
+  const email = String(body.email || '').trim().toLowerCase()
+  const password = String(body.password || '').trim()
 
   const r = await fetch(`${API}/api/v1/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ username: body.email, password: body.password }),
+    body: new URLSearchParams({ username: email, password }),
   })
 
   if (!r.ok) {
     const err = await r.json().catch(() => ({ detail: 'Login failed' }))
-    return NextResponse.json(err, { status: r.status })
+    const message = err?.message || err?.detail || 'Login failed'
+    return NextResponse.json({ ...err, message }, { status: r.status })
   }
 
   const data = await r.json() as { access_token: string; refresh_token?: string; token_type?: string }

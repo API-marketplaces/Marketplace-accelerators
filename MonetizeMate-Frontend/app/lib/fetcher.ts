@@ -35,15 +35,19 @@ export async function apiFetch<T>(
         const body = isJson ? await res.json() : await res.text()
 
         if (!res.ok) {
-            const message = (typeof body === 'object' && body?.message) || res.statusText || 'Request failed'
+            const message =
+                (typeof body === 'object' && body && 'message' in body && body.message) ||
+                (typeof body === 'object' && body && 'detail' in body && body.detail) ||
+                res.statusText ||
+                'Request failed'
             throw new ApiError(message, res.status, body)
         }
 
         return body as T
-    } catch (err: any) {
+    } catch (err: unknown) {
         // Re-throw AbortError as-is so SWR's onErrorRetry can identify it
         // and retry instead of treating it as a permanent failure.
-        if (err?.name === 'AbortError') throw err
+        if (err instanceof DOMException && err.name === 'AbortError') throw err
         throw err
     } finally {
         clearTimeout(timeout)
