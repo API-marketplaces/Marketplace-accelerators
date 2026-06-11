@@ -39,16 +39,38 @@ const FEATURE_PREVIEW = [
   },
 ]
 
+function getInitialResetParams() {
+  if (typeof window === 'undefined') {
+    return { email: '', token: '' }
+  }
+
+  const params = new URLSearchParams(window.location.search)
+  return {
+    email: (params.get('email') || '').trim().toLowerCase(),
+    token: params.get('resetToken') || '',
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter()
-  const { login, loggingIn, resetPassword, resettingPassword } = useAuth()
-  const [mode, setMode] = useState<'login' | 'reset'>('login')
+  const [initialResetParams] = useState(getInitialResetParams)
+  const {
+    login,
+    loggingIn,
+    requestPasswordResetLink,
+    requestingPasswordResetLink,
+    resetPassword,
+    resettingPassword,
+  } = useAuth()
+  const [mode, setMode] = useState<'login' | 'reset'>(initialResetParams.token ? 'reset' : 'login')
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [resetEmail, setResetEmail] = useState('')
+  const [resetEmail, setResetEmail] = useState(initialResetParams.email)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [resetToken, setResetToken] = useState(initialResetParams.token)
+  const [resetLinkSent, setResetLinkSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -72,6 +94,23 @@ export default function LoginPage() {
     event.preventDefault()
     setError(null)
     setSuccess(null)
+    const normalizedEmail = resetEmail.trim().toLowerCase()
+
+    if (!resetToken) {
+      if (!normalizedEmail) {
+        setError('Enter your email address.')
+        return
+      }
+
+      try {
+        const response = await requestPasswordResetLink({ email: normalizedEmail })
+        setResetLinkSent(true)
+        setSuccess(response.message || 'Password reset link sent to your email.')
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Unable to send reset link.')
+      }
+      return
+    }
 
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match.')
@@ -84,13 +123,16 @@ export default function LoginPage() {
     }
 
     try {
-      await resetPassword({ email: resetEmail.trim().toLowerCase(), password: newPassword.trim() })
+      await resetPassword({ email: normalizedEmail, password: newPassword.trim(), token: resetToken })
       setEmail(resetEmail.trim().toLowerCase())
       setPassword('')
       setNewPassword('')
       setConfirmPassword('')
+      setResetToken('')
+      setResetLinkSent(false)
       setMode('login')
       setSuccess('Password updated. Sign in with your new password.')
+      router.replace('/login')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unable to reset password.')
     }
@@ -98,6 +140,10 @@ export default function LoginPage() {
 
   const openResetForm = () => {
     setResetEmail(email.trim().toLowerCase())
+    setNewPassword('')
+    setConfirmPassword('')
+    setResetToken('')
+    setResetLinkSent(false)
     setError(null)
     setSuccess(null)
     setMode('reset')
@@ -105,46 +151,48 @@ export default function LoginPage() {
 
   return (
     <main className="signin-shell">
-      <section className="signin-layout">
-        <div className="signin-copy">
-          <div className="brand-row">
-            <div className="brand-mark">M</div>
-            <div>
-              <p>MonetizeMate</p>
-              <span>AI-Powered API Monetization</span>
+      <section className={`signin-layout ${mode === 'reset' ? 'reset-layout' : ''}`}>
+        {mode === 'login' && (
+          <div className="signin-copy">
+            <div className="brand-row">
+              <div className="brand-mark">M</div>
+              <div>
+                <p>MonetizeMate</p>
+                <span>AI-Powered API Monetization</span>
+              </div>
+            </div>
+
+            <p className="signin-kicker">Secure sign in</p>
+            <h1>Unlock your revenue dashboard.</h1>
+            <p className="signin-summary">
+              Sign in to access your strategy advisor, API statistics, and prediction models in
+              one focused workspace.
+            </p>
+
+            <div className="preview-list" aria-label="Dashboard features">
+              {FEATURE_PREVIEW.map((feature) => {
+                const Icon = feature.icon
+
+                return (
+                  <div key={feature.title} className="preview-item">
+                    <div className="preview-icon">
+                      <Icon aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h2>{feature.title}</h2>
+                      <p>{feature.text}</p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
-
-          <p className="signin-kicker">Secure sign in</p>
-          <h1>Unlock your revenue dashboard.</h1>
-          <p className="signin-summary">
-            Sign in to access your strategy advisor, API statistics, and prediction models in
-            one focused workspace.
-          </p>
-
-          <div className="preview-list" aria-label="Dashboard features">
-            {FEATURE_PREVIEW.map((feature) => {
-              const Icon = feature.icon
-
-              return (
-                <div key={feature.title} className="preview-item">
-                  <div className="preview-icon">
-                    <Icon aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h2>{feature.title}</h2>
-                    <p>{feature.text}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        )}
 
         <Card className="signin-card">
           <div className="card-heading">
             <h2>{mode === 'login' ? 'Welcome Back' : 'Reset Password'}</h2>
-            <p>{mode === 'login' ? 'Sign in to continue to MonetizeMate' : 'Create a new password for your account'}</p>
+            <p>{mode === 'login' ? 'Sign in to continue to MonetizeMate' : resetToken ? 'Create a new password for your account' : 'Send a secure reset link to your email'}</p>
           </div>
 
           <form className="signin-form" onSubmit={mode === 'login' ? handleSubmit : handleResetSubmit}>
@@ -226,52 +274,78 @@ export default function LoginPage() {
                       type="email"
                       placeholder="Enter your email"
                       value={resetEmail}
-                      onChange={(event) => setResetEmail(event.target.value)}
+                      onChange={(event) => {
+                        setResetEmail(event.target.value)
+                        setResetLinkSent(false)
+                      }}
+                      readOnly={!!resetToken}
                       required
                     />
                   </div>
                 </div>
 
-                <div className="field-group">
-                  <Label htmlFor="new-password">New Password</Label>
-                  <div className="input-wrap">
-                    <KeyRound aria-hidden="true" />
-                    <Input
-                      id="new-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter a new password"
-                      value={newPassword}
-                      onChange={(event) => setNewPassword(event.target.value)}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((visible) => !visible)}
-                      className="password-toggle"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                    </button>
-                  </div>
-                </div>
+                {resetToken && (
+                  <>
+                    <div className="field-group">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <div className="input-wrap">
+                        <KeyRound aria-hidden="true" />
+                        <Input
+                          id="new-password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter a new password"
+                          value={newPassword}
+                          onChange={(event) => setNewPassword(event.target.value)}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((visible) => !visible)}
+                          className="password-toggle"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                        </button>
+                      </div>
+                    </div>
 
-                <div className="field-group">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <div className="input-wrap">
-                    <Lock aria-hidden="true" />
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      placeholder="Confirm your new password"
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
+                    <div className="field-group">
+                      <Label htmlFor="confirm-password">Confirm Password</Label>
+                      <div className="input-wrap">
+                        <Lock aria-hidden="true" />
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          placeholder="Confirm your new password"
+                          value={confirmPassword}
+                          onChange={(event) => setConfirmPassword(event.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
-                <Button type="submit" className="signin-submit" disabled={resettingPassword}>
-                  {resettingPassword ? 'Updating Password...' : 'Update Password'}
+                {resetLinkSent && (
+                  <div className="reset-link-note">
+                    Check your email and open the reset link to choose a new password.
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="signin-submit"
+                  disabled={requestingPasswordResetLink || resettingPassword}
+                >
+                  {resetToken
+                    ? resettingPassword
+                      ? 'Updating Password...'
+                      : 'Update Password'
+                    : requestingPasswordResetLink
+                      ? 'Sending Link...'
+                      : resetLinkSent
+                        ? 'Send Link Again'
+                        : 'Send Reset Link'}
                 </Button>
 
                 <button
@@ -280,6 +354,9 @@ export default function LoginPage() {
                   onClick={() => {
                     setMode('login')
                     setError(null)
+                    setResetToken('')
+                    setResetLinkSent(false)
+                    router.replace('/login')
                   }}
                 >
                   Back to sign in
@@ -331,6 +408,11 @@ export default function LoginPage() {
           grid-template-columns: minmax(0, 1.05fr) minmax(360px, 430px);
           gap: 48px;
           align-items: center;
+        }
+
+        .reset-layout {
+          grid-template-columns: minmax(360px, 430px);
+          justify-content: center;
         }
 
         .brand-row {
@@ -518,6 +600,16 @@ export default function LoginPage() {
           background: rgba(255, 255, 255, 0.055) !important;
           border-color: rgba(0, 229, 192, 0.18) !important;
           color: #ffffff !important;
+        }
+
+        .reset-link-note {
+          border: 1px solid rgba(0, 229, 192, 0.16);
+          border-radius: 10px;
+          background: rgba(0, 229, 192, 0.08);
+          color: rgba(255, 255, 255, 0.72);
+          font-size: 13px;
+          line-height: 1.5;
+          padding: 12px 14px;
         }
 
         .password-toggle {

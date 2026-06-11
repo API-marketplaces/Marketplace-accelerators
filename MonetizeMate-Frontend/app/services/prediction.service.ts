@@ -11,6 +11,7 @@ export const getPredictionData = async (fileId: string): Promise<PredictionData>
 
   // Mock data
   const mockData: PredictionData = {
+    inputDataAccuracy: 80,
     anomalies: {
       request_spike: [
         { timestamp: '2023-10-26 14:30', request_count: 200, user_id: 'user-1', user_count: 5, response_time: 120, response_code: 200, endpoint: '/api/v1/data', cpu_usage: 45, memory_usage: 60, rps: 10, feature_usage: 'read', session_duration: 300, current_usage: 200, quota_limit: 1200, ip_address: '192.168.1.1', revenue: 0, customers: 3, anomaly_score: 0.9, type: 'request_spike', reason: 'Sudden drop in API calls' },
@@ -43,7 +44,7 @@ export const getPredictionData = async (fileId: string): Promise<PredictionData>
       { errorType: '429 Too Many Requests', count: 5, percentage: 5.5 },
     ],
     futureVolume: {
-      model: 'linear_regression',
+      model: 'Random Forest',
       history_days: 30,
       predicted_days: 7,
       predictions: [
@@ -56,22 +57,56 @@ export const getPredictionData = async (fileId: string): Promise<PredictionData>
         { date: '2023-11-07', predicted_request_count: 2550 },
       ],
     },
+    modelPerformance: [
+      {
+        id: 'linear',
+        name: 'Linear Regression',
+        description: 'Simple and interpretable model for linear relationships',
+        accuracy: 87.3,
+        trainingTime: 'Fast',
+        modelType: 'Linear',
+        strengths: ['Fast training', 'Easy to explain', 'Good baseline'],
+        bestFor: ['Linear trends', 'Simple relationships'],
+      },
+      {
+        id: 'gradient_boosting',
+        name: 'Gradient Boosting',
+        description: 'Ensemble method that builds models sequentially',
+        accuracy: 98.0,
+        trainingTime: 'Medium',
+        modelType: 'Ensemble',
+        strengths: ['High accuracy', 'Handles non-linear patterns', 'Feature importance'],
+        bestFor: ['Complex patterns', 'High accuracy needs'],
+      },
+      {
+        id: 'random_forest',
+        name: 'Random Forest',
+        description: 'Ensemble of decision trees with averaging',
+        accuracy: 93.0,
+        trainingTime: 'Medium',
+        modelType: 'Ensemble',
+        strengths: ['Mixed data support', 'Robust predictions', 'Feature importance'],
+        bestFor: ['Mixed data types', 'Robust predictions'],
+      },
+    ],
     quotaExceedances: [
       { userId: 'user-123', apiKey: '...key1', usage: 9800, quota: 10000, exceedancePercentage: 98 },
       { userId: 'user-456', apiKey: '...key2', usage: 15000, quota: 15000, exceedancePercentage: 100 },
       { userId: 'user-789', apiKey: '...key3', usage: 8500, quota: 10000, exceedancePercentage: 85 },
     ],
-    rateLimitPredictions: [
-      { time: '14:00', predictedHits: 50 },
-      { time: '14:05', predictedHits: 120 },
-      { time: '14:10', predictedHits: 250 },
-      { time: '14:15', predictedHits: 180 },
-      { time: '14:20', predictedHits: 90 },
-    ],
+    rateLimitOptimization: {
+      modelUsed: 'Random Forest',
+      description: 'Prediction performed using pattern recognition to analyze request patterns, detect abuse, and optimize rate limits per endpoint based on historical traffic data.',
+      forecastInsight: 'Based on 10,346 request records, the model identified endpoint-specific abuse patterns and capacity constraints to recommend optimal rate limits.',
+      recommendations: [
+        { endpoint: '/api/v1/search', currentLimit: 1000, recommendedLimit: 850, insight: 'High abuse pattern detected', status: 'reduce' },
+        { endpoint: '/api/v1/data', currentLimit: 5000, recommendedLimit: 6500, insight: 'Capacity available for growth', status: 'increase' },
+        { endpoint: '/api/v1/export', currentLimit: 100, recommendedLimit: 100, insight: 'Optimal configuration', status: 'keep' },
+      ],
+    },
     resourceUsagePredictions: [
       { resource: 'CPU', currentUsage: 60, predictedUsage: 85, unit: 'GHz' },
       { resource: 'Memory', currentUsage: 12, predictedUsage: 14, unit: 'GB' },
-      { resource: 'Bandwidth', currentUsage: 500, predictedUsage: 750, unit: 'Mbps' },
     ],
     userPatterns: [
       { userSegment: 'Power Users', description: 'Users with high daily API usage.', avgRequestsPerDay: 5000, peakTime: '10:00-12:00' },

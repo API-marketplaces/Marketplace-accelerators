@@ -33,6 +33,17 @@ def create_features(df):
     df_featured['Year'] = df_featured['Date'].dt.year
     return df_featured
 
+
+def _read_dataframe(file_path: str) -> pd.DataFrame:
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext in [".json", ".log"]:
+        from app.core.file_parsers import load_log_or_json_to_df
+        return load_log_or_json_to_df(file_path)
+    elif ext == ".xlsx":
+        return pd.read_excel(file_path)
+    else:
+        return pd.read_csv(file_path)
+
 # --- Anomaly Detection Endpoint ---
 @router.get("/anomalies/{file_id}", summary="Detect anomalies in prediction data")
 async def detect_anomalies(
@@ -60,10 +71,7 @@ async def detect_anomalies(
     if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
     # Read the file
-    if file_path.endswith(".xlsx"):
-        df = pd.read_excel(file_path)
-    else:
-        df = pd.read_csv(file_path)
+    df = _read_dataframe(file_path)
     # Select relevant features
     feature_cols = ["request_count", "response_time", "cpu_usage", "memory_usage"]
     error_col = None
@@ -163,10 +171,7 @@ async def peak_usage_periods(
     if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
     # Read the file
-    if file_path.endswith(".xlsx"):
-        df = pd.read_excel(file_path)
-    else:
-        df = pd.read_csv(file_path)
+    df = _read_dataframe(file_path)
     # Check required columns
     for col in ["timestamp", "request_count"]:
         if col not in df.columns:
@@ -210,10 +215,7 @@ async def error_type_classification(
     if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
     # Read the file
-    if file_path.endswith(".xlsx"):
-        df = pd.read_excel(file_path)
-    else:
-        df = pd.read_csv(file_path)
+    df = _read_dataframe(file_path)
     # Check required columns
     required_cols = ["response_code", "request_count", "cpu_usage", "memory_usage", "endpoint", "user_id"]
     missing = [col for col in required_cols if col not in df.columns]
@@ -282,10 +284,7 @@ async def quota_limit_exceedance(
     if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
     # Read the file
-    if file_path.endswith(".xlsx"):
-        df = pd.read_excel(file_path)
-    else:
-        df = pd.read_csv(file_path)
+    df = _read_dataframe(file_path)
     # Check required columns
     required_cols = ["current_usage", "quota_limit", "rps", "timestamp", "user_id"]
     missing = [col for col in required_cols if col not in df.columns]
@@ -385,10 +384,7 @@ async def predict_future_request_volume(
     if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
     # Read the file
-    if file_path.endswith(".xlsx"):
-        df = pd.read_excel(file_path)
-    else:
-        df = pd.read_csv(file_path)
+    df = _read_dataframe(file_path)
     # Check required columns
     for col in ["timestamp", "request_count"]:
         if col not in df.columns:
@@ -453,10 +449,7 @@ async def rate_limit_prediction(
     if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
     # Read the file
-    if file_path.endswith(".xlsx"):
-        df = pd.read_excel(file_path)
-    else:
-        df = pd.read_csv(file_path)
+    df = _read_dataframe(file_path)
     # Check required columns
     required_cols = ["user_id", "timestamp", "rps", "allowed_rps"]
     missing = [col for col in required_cols if col not in df.columns]
@@ -555,10 +548,7 @@ async def predict_resource_usage(
     if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
     # Read the file
-    if file_path.endswith(".xlsx"):
-        df = pd.read_excel(file_path)
-    else:
-        df = pd.read_csv(file_path)
+    df = _read_dataframe(file_path)
     # Check required columns
     for col in ["timestamp", "cpu_usage", "memory_usage"]:
         if col not in df.columns:
@@ -631,10 +621,7 @@ async def user_behavior_patterns(
     if not os.path.abspath(file_path).startswith(os.path.abspath(settings.UPLOAD_DIRECTORY)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
     # Read the file
-    if file_path.endswith(".xlsx"):
-        df = pd.read_excel(file_path)
-    else:
-        df = pd.read_csv(file_path)
+    df = _read_dataframe(file_path)
     # Check required columns
     required_cols = ["user_id", "timestamp", "request_count", "endpoint", "response_code"]
     missing = [col for col in required_cols if col not in df.columns]

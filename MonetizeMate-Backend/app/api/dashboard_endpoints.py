@@ -38,6 +38,18 @@ def _is_safe_upload_path(file_path: str) -> bool:
 
 def _read_dataframe(file_path: str, columns: Iterable[str] | None = None) -> pd.DataFrame:
     ext = os.path.splitext(file_path)[1].lower()
+    
+    if ext in [".json", ".log"]:
+        from app.core.file_parsers import load_log_or_json_to_df
+        df = load_log_or_json_to_df(file_path)
+        if columns:
+            wanted = set(columns)
+            usecols = [col for col in df.columns if col in wanted]
+            if not usecols:
+                return pd.DataFrame()
+            return df[usecols]
+        return df
+
     usecols = None
 
     if columns:
@@ -87,7 +99,9 @@ def _prepare_timestamps(df: pd.DataFrame) -> pd.DataFrame:
         return df
     df = df.copy()
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
-    df["timestamp"] = df["timestamp"].dt.tz_localize(None)
+    # tz_convert(None) strips timezone info from tz-aware datetimes (correct);
+    # tz_localize would raise TypeError on already-aware datetimes from .log/.json files.
+    df["timestamp"] = df["timestamp"].dt.tz_convert(None)
     df = df.dropna(subset=["timestamp"])
     return df
 

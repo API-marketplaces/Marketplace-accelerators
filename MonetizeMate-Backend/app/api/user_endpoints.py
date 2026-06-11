@@ -1,17 +1,35 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import datetime, timedelta
+import hashlib
+import hmac
+import secrets
+from urllib.parse import urlencode
 
 # Local imports from the application's modules
 from app.database.database import get_db
-from app.schemas.audience import AudienceCreate, AudienceResponse, PasswordResetRequest, Token
+from app.schemas.audience import AudienceCreate, AudienceResponse, PasswordResetLinkRequest, PasswordResetRequest, Token
 from app.crud import audiences as crud_users
 from app.core.security import authenticate_user, create_access_token, get_current_user
 from app.core.config import settings
+from app.core.email import send_password_reset_link
 
 # Initialize the API router for user-related endpoints
 router = APIRouter()
+password_reset_tokens = {}
+
+def _hash_reset_token(token: str) -> str:
+    value = f"{token}:{settings.SECRET_KEY}"
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+def _clear_expired_reset_tokens():
+    now = datetime.utcnow()
+    expired_tokens = [
+        token_hash for token_hash, entry in password_reset_tokens.items() if entry["expires_at"] <= now
+    ]
+    for token_hash in expired_tokens:
+        password_reset_tokens.pop(token_hash, None)
 
 @router.post("/register", response_model=AudienceResponse, status_code=status.HTTP_201_CREATED)
 def register_user(user: AudienceCreate, db: Session = Depends(get_db)):
@@ -28,17 +46,62 @@ def register_user(user: AudienceCreate, db: Session = Depends(get_db)):
         )
     return crud_users.create_user(db=db, user=user)
 
-@router.post("/forgot-password")
-def forgot_password(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+@router.post("/forgot-password/request-link")
+def request_password_reset_link(payload: PasswordResetLinkRequest, db: Session = Depends(get_db)):
     """
-    Resets a user's password after validating the account email.
+    Sends a secure one-time reset link to the account email.
     """
-    db_user = crud_users.update_user_password(db=db, email=payload.email, password=payload.password)
+    _clear_expired_reset_tokens()
+    email = payload.email.strip().lower()
+    db_user = crud_users.get_user_by_email(db, email=email)
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No account found for this email"
         )
+
+    token = secrets.token_urlsafe(32)
+    token_hash = _hash_reset_token(token)
+    password_reset_tokens[token_hash] = {
+        "email": email,
+        "expires_at": datetime.utcnow() + timedelta(minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES),
+    }
+
+    frontend_url = str(settings.FRONTEND_URL[0]).rstrip("/") if settings.FRONTEND_URL else "http://localhost:3000"
+    reset_link = f"{frontend_url}/login?{urlencode({'resetToken': token, 'email': email})}"
+
+    sent = send_password_reset_link(email, reset_link)
+    if not sent:
+        print(f"Password reset link for {email}: {reset_link}")
+
+    message = "Password reset link sent to your email"
+    if not sent:
+        message = "Reset link generated. Check backend logs because SMTP is not configured."
+    return {"ok": True, "message": message}
+
+@router.post("/forgot-password")
+def forgot_password(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    """
+    Resets a user's password after validating the account email and reset token.
+    """
+    _clear_expired_reset_tokens()
+    email = payload.email.strip().lower()
+    token_hash = _hash_reset_token(payload.token)
+    token_entry = password_reset_tokens.get(token_hash)
+    if not token_entry or not hmac.compare_digest(token_entry["email"], email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset link"
+        )
+
+    db_user = crud_users.update_user_password(db=db, email=email, password=payload.password)
+    if not db_user:
+        password_reset_tokens.pop(token_hash, None)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found for this email"
+        )
+    password_reset_tokens.pop(token_hash, None)
     return {"ok": True, "message": "Password updated successfully"}
 
 @router.post("/token", response_model=Token)

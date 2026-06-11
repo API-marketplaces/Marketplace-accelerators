@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import DashboardNavbar from '../components/DashboardNavbar'
-import { ArrowRight, BarChart3, Brain, CheckCircle2, Compass } from 'lucide-react'
+import { ArrowRight, BarChart3, CheckCircle2, Compass, Info } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip'
 import type { LucideIcon } from 'lucide-react'
 
 type DashboardFeature = {
   title: string
   description: string
+  tooltip: string
   href: string
   action: string
   eyebrow: string
@@ -18,26 +20,20 @@ const FEATURES: DashboardFeature[] = [
   {
     title: 'Monetization Strategy Advisor',
     description: 'Get personalized monetization recommendations based on your business model.',
+    tooltip: 'Turn business inputs into a recommended pricing model, packaging direction, and next steps for monetizing your APIs.',
     href: '/dashboard/strategy-adviser',
     action: 'Get strategy',
     eyebrow: 'Strategy',
     icon: Compass,
   },
   {
-    title: 'API Statistics',
-    description: 'Analyze usage patterns and performance metrics from your API data.',
-    href: '/dashboard/upload?decisionMetrics=analytics',
-    action: 'Analyze performance',
-    eyebrow: 'Analytics',
+    title: 'Analytics Workbench',
+    description: 'Analyze API performance, usage patterns, forecasts, and growth signals in one workspace.',
+    tooltip: 'Open API Statistics or Prediction Models so you can inspect uploaded data, review operational trends, and run forecasting or anomaly analysis.',
+    href: '/dashboard/analytics-workbench',
+    action: 'Open workbench',
+    eyebrow: 'Analytics + Forecasting',
     icon: BarChart3,
-  },
-  {
-    title: 'Prediction Models',
-    description: 'Use AI-powered models to forecast revenue and spot usage trends.',
-    href: '/dashboard/upload?decisionMetrics=prediction',
-    action: 'Predict growth',
-    eyebrow: 'Forecasting',
-    icon: Brain,
   },
 ]
 
@@ -45,14 +41,17 @@ const STEPS = [
   {
     label: 'Get Strategy Recommendations',
     text: 'Answer questions about your business to receive personalized monetization strategies.',
+    tooltip: 'Best first step when you are deciding between freemium, tiered, pay-per-use, or hybrid pricing.',
   },
   {
     label: 'Analyze Performance',
     text: 'Monitor your API statistics and understand usage patterns.',
+    tooltip: 'Use this widget after uploading API logs to validate where usage, client demand, and operational load are concentrated.',
   },
   {
     label: 'Predict Growth',
     text: 'Forecast revenue and optimize your strategy with AI models.',
+    tooltip: 'Use predictions once historical usage exists, so model output can guide capacity, pricing, and retention decisions.',
   },
 ]
 
@@ -62,10 +61,32 @@ export default function DashboardPage() {
       <DashboardNavbar />
 
       <section className="dashboard-content">
+        <section className="welcome-panel" aria-labelledby="welcome-title">
+          <h2 id="welcome-title">Welcome to MonetizeMate</h2>
+          <p>
+            Start with the Monetization Strategy Advisor, then use analytics and prediction tools
+            to optimize and track your revenue growth.
+          </p>
+
+          <div className="steps-grid">
+            {STEPS.map((step, index) => (
+              <div key={step.label} className="step-item">
+                <div className="step-number">
+                  <span>{index + 1}</span>
+                  <CheckCircle2 aria-hidden="true" />
+                </div>
+                <h3>{step.label}</h3>
+                <InfoHint text={step.tooltip} />
+                <p>{step.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <div className="dashboard-heading">
           <div>
             <p className="dashboard-kicker">Interactive Dashboard</p>
-            <h1>MonetizeMate</h1>
+            <h1>Features</h1>
             <p>Your AI-powered monetization dashboard</p>
           </div>
         </div>
@@ -85,7 +106,10 @@ export default function DashboardPage() {
                     <div className="feature-icon">
                       <Icon aria-hidden="true" />
                     </div>
-                    <span className="feature-eyebrow">{feature.eyebrow}</span>
+                    <div className="feature-meta">
+                      <span className="feature-eyebrow">{feature.eyebrow}</span>
+                      <InfoHint text={feature.tooltip} />
+                    </div>
                   </div>
                   <div>
                     <h2>{feature.title}</h2>
@@ -100,27 +124,6 @@ export default function DashboardPage() {
             )
           })}
         </div>
-
-        <section className="welcome-panel" aria-labelledby="welcome-title">
-          <h2 id="welcome-title">Welcome to MonetizeMate</h2>
-          <p>
-            Start with the Monetization Strategy Advisor, then use analytics and prediction tools
-            to optimize and track your revenue growth.
-          </p>
-
-          <div className="steps-grid">
-            {STEPS.map((step, index) => (
-              <div key={step.label} className="step-item">
-                <div className="step-number">
-                  <span>{index + 1}</span>
-                  <CheckCircle2 aria-hidden="true" />
-                </div>
-                <h3>{step.label}</h3>
-                <p>{step.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
       </section>
 
       <style>{`
@@ -143,7 +146,7 @@ export default function DashboardPage() {
           align-items: center;
           justify-content: space-between;
           gap: 24px;
-          margin-bottom: 44px;
+          margin: 46px 0 30px;
         }
 
         .dashboard-kicker {
@@ -171,28 +174,29 @@ export default function DashboardPage() {
 
         .feature-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 24px;
-          margin-bottom: 66px;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 26px;
+          margin-bottom: 0;
         }
 
         .feature-card {
           position: relative;
           display: flex;
-          min-height: 312px;
+          min-height: 362px;
           color: inherit;
           text-decoration: none;
           border-radius: 20px;
           overflow: hidden;
           background:
-            radial-gradient(circle at 16% 12%, rgba(190, 242, 100, 0.22), transparent 30%),
-            radial-gradient(circle at 84% 86%, rgba(45, 212, 191, 0.3), transparent 34%),
-            linear-gradient(145deg, rgba(6, 95, 70, 0.98) 0%, rgba(4, 120, 87, 0.94) 48%, rgba(2, 71, 55, 0.98) 100%);
-          border: 1px solid rgba(134, 239, 172, 0.54);
+            radial-gradient(circle at 13% 10%, rgba(124, 255, 229, 0.18), transparent 26%),
+            radial-gradient(circle at 82% 86%, rgba(0, 229, 192, 0.16), transparent 34%),
+            linear-gradient(145deg, rgba(48, 61, 78, 0.9) 0%, rgba(20, 38, 54, 0.96) 45%, rgba(13, 31, 44, 0.98) 100%);
+          border: 1px solid rgba(103, 188, 178, 0.48);
           box-shadow:
-            0 26px 70px rgba(16, 185, 129, 0.24),
-            inset 0 1px 0 rgba(255, 255, 255, 0.18),
-            inset 0 -90px 100px rgba(2, 44, 34, 0.28);
+            0 22px 68px rgba(0, 0, 0, 0.28),
+            0 0 0 1px rgba(0, 229, 192, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.13),
+            inset 0 -86px 100px rgba(4, 24, 35, 0.24);
           transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
         }
 
@@ -201,8 +205,8 @@ export default function DashboardPage() {
           position: absolute;
           inset: 0;
           background:
-            linear-gradient(115deg, rgba(255,255,255,0.2), transparent 28%),
-            linear-gradient(180deg, rgba(236, 253, 245, 0.08), transparent 58%);
+            linear-gradient(115deg, rgba(255,255,255,0.13), transparent 28%),
+            linear-gradient(180deg, rgba(236, 253, 245, 0.05), transparent 58%);
           opacity: 0.9;
           pointer-events: none;
         }
@@ -212,16 +216,16 @@ export default function DashboardPage() {
           position: absolute;
           inset: 1px;
           border-radius: 19px;
-          border: 1px solid rgba(167, 243, 208, 0.18);
+          border: 1px solid rgba(167, 243, 208, 0.1);
           pointer-events: none;
         }
 
         .feature-card:hover {
           transform: translateY(-5px);
-          border-color: rgba(110, 231, 183, 0.72);
+          border-color: rgba(118, 240, 219, 0.72);
           box-shadow:
-            0 32px 88px rgba(0, 229, 192, 0.32),
-            0 0 0 1px rgba(110, 231, 183, 0.12),
+            0 30px 88px rgba(0, 229, 192, 0.18),
+            0 0 0 1px rgba(110, 231, 183, 0.1),
             inset 0 1px 0 rgba(255, 255, 255, 0.22),
             inset 0 -80px 90px rgba(3, 30, 24, 0.2);
         }
@@ -230,10 +234,10 @@ export default function DashboardPage() {
           position: relative;
           z-index: 1;
           flex: 1;
-          min-height: 312px;
+          min-height: 362px;
           height: 100%;
           box-sizing: border-box;
-          padding: 34px;
+          padding: 34px 34px 33px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -247,25 +251,32 @@ export default function DashboardPage() {
           gap: 18px;
         }
 
+        .feature-meta {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          min-width: 0;
+        }
+
         .feature-icon {
-          width: 58px;
-          height: 58px;
+          width: 66px;
+          height: 66px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           background:
             radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.95), transparent 30%),
-            linear-gradient(145deg, #d1fae5, #5eead4);
+            linear-gradient(145deg, #c9fff5, #5ff2da);
           border: 1px solid rgba(236, 253, 245, 0.72);
           box-shadow:
-            0 14px 32px rgba(4, 120, 87, 0.35),
-            0 0 0 8px rgba(209, 250, 229, 0.08);
+            0 16px 34px rgba(0, 229, 192, 0.22),
+            0 0 0 9px rgba(209, 250, 229, 0.09);
         }
 
         .feature-icon svg {
-          width: 27px;
-          height: 27px;
+          width: 30px;
+          height: 30px;
           color: #064e3b;
           stroke-width: 2.5;
         }
@@ -274,10 +285,10 @@ export default function DashboardPage() {
           display: inline-flex;
           align-items: center;
           min-height: 28px;
-          padding: 5px 11px;
+          padding: 5px 12px;
           border-radius: 999px;
-          border: 1px solid rgba(220, 252, 231, 0.32);
-          background: rgba(220, 252, 231, 0.16);
+          border: 1px solid rgba(220, 252, 231, 0.36);
+          background: rgba(220, 252, 231, 0.14);
           color: #dcfce7;
           font-size: 11px;
           font-weight: 800;
@@ -285,19 +296,62 @@ export default function DashboardPage() {
           letter-spacing: 0.08em;
         }
 
+        .info-hint {
+          width: 28px;
+          height: 28px;
+          flex: 0 0 auto;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          border: 1px solid rgba(220, 252, 231, 0.34);
+          background: rgba(220, 252, 231, 0.14);
+          color: #dcfce7;
+          cursor: help;
+          transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+        }
+
+        .info-hint:hover,
+        .info-hint:focus-visible {
+          border-color: rgba(220, 252, 231, 0.72);
+          background: rgba(220, 252, 231, 0.24);
+          color: #ffffff;
+          outline: none;
+        }
+
+        .info-hint svg {
+          width: 15px;
+          height: 15px;
+          stroke-width: 2.5;
+        }
+
+        .info-tooltip {
+          max-width: 292px;
+          border: 1px solid rgba(45, 212, 191, 0.34);
+          background: #102235;
+          color: #ecfdf5;
+          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+        }
+
+        .info-tooltip p {
+          margin: 0;
+          font-size: 13px;
+          line-height: 1.45;
+        }
+
         .feature-card h2 {
           max-width: 360px;
           margin: 0 0 16px;
           color: #ffffff;
-          font-size: 22px;
+          font-size: 23px;
           line-height: 1.22;
-          font-weight: 800;
+          font-weight: 900;
         }
 
         .feature-card p {
           max-width: 390px;
           margin: 0;
-          color: rgba(236, 253, 245, 0.88);
+          color: rgba(236, 253, 245, 0.82);
           font-size: 15px;
           line-height: 1.62;
         }
@@ -307,12 +361,12 @@ export default function DashboardPage() {
           align-items: center;
           justify-content: space-between;
           width: fit-content;
-          min-width: 176px;
+          min-width: 196px;
           gap: 12px;
           padding: 10px 12px 10px 16px;
           border-radius: 999px;
-          border: 1px solid rgba(220, 252, 231, 0.32);
-          background: rgba(220, 252, 231, 0.16);
+          border: 1px solid rgba(220, 252, 231, 0.38);
+          background: rgba(220, 252, 231, 0.14);
           color: #ecfdf5;
           font-size: 14px;
           font-weight: 800;
@@ -365,6 +419,7 @@ export default function DashboardPage() {
 
         .step-item {
           min-width: 0;
+          position: relative;
         }
 
         .step-number {
@@ -397,6 +452,15 @@ export default function DashboardPage() {
           font-size: 15px;
           line-height: 1.45;
           font-weight: 800;
+        }
+
+        .step-item .info-hint {
+          margin: 0 auto 10px;
+          width: 26px;
+          height: 26px;
+          color: #a7f3d0;
+          border-color: rgba(0, 229, 192, 0.24);
+          background: rgba(0, 229, 192, 0.1);
         }
 
         .step-item p {
@@ -442,5 +506,25 @@ export default function DashboardPage() {
         }
       `}</style>
     </main>
+  )
+}
+
+function InfoHint({ text }: { text: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="info-hint"
+          role="img"
+          aria-label={text}
+          onClick={(event) => event.preventDefault()}
+        >
+          <Info aria-hidden="true" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="info-tooltip">
+        <p>{text}</p>
+      </TooltipContent>
+    </Tooltip>
   )
 }

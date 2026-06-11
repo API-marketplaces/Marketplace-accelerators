@@ -36,8 +36,8 @@ export default function FileUpload({
     onFileUpdate,
     onFileSelect,
     title = "Upload Your Files",
-    description = "Upload CSV or Excel files for analysis",
-    acceptedTypes = [".csv", ".xlsx", ".xls"]
+    description = "Upload CSV, Excel, JSON or Log files for analysis",
+    acceptedTypes = [".csv", ".xlsx", ".xls", ".json", ".log"]
 }: FileUploadProps) {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isUploading, setIsUploading] = useState(false);

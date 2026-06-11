@@ -226,11 +226,11 @@ function UploadPageInner() {
               <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>or click to browse files</div>
               <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.28)', marginBottom: '16px' }}>Maximum file size: {formatUploadLimit()}</div>
               <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginBottom: '20px' }}>
-                {['.csv', '.xlsx', '.xls'].map(t => <span key={t} style={{ fontSize: '11px', fontWeight: '600', color: meta.color, background: `rgba(${meta.color === '#00E5C0' ? '0,229,192' : '129,140,248'},0.08)`, border: `1px solid ${meta.color}25`, borderRadius: '100px', padding: '3px 10px' }}>{t}</span>)}
+                {['.csv', '.xlsx', '.xls', '.json', '.log'].map(t => <span key={t} style={{ fontSize: '11px', fontWeight: '600', color: meta.color, background: `rgba(${meta.color === '#00E5C0' ? '0,229,192' : '129,140,248'},0.08)`, border: `1px solid ${meta.color}25`, borderRadius: '100px', padding: '3px 10px' }}>{t}</span>)}
               </div>
               <button style={{ background: `linear-gradient(135deg, ${meta.color}, #1ABFA3)`, border: 'none', color: '#060E1E', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>Choose File</button>
             </div>
-            <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) openUpload(f); e.target.value = '' }} />
+            <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.json,.log" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) openUpload(f); e.target.value = '' }} />
 
             {sampleData && (
               <div style={{ marginTop: '14px', padding: '14px', borderRadius: '12px', background: 'rgba(0,229,192,0.05)', border: `1px solid ${meta.color}25` }}>
@@ -297,7 +297,7 @@ function UploadPageInner() {
                   >
                     {/* Icon */}
                     <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
-                      {String(file.name || '').endsWith('.csv') ? '📊' : '📗'}
+                      {String(file.name || '').endsWith('.csv') ? '📊' : String(file.name || '').endsWith('.json') ? '⚙️' : String(file.name || '').endsWith('.log') ? '📝' : '📗'}
                     </div>
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>

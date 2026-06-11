@@ -59,12 +59,19 @@ class AudienceUpdate(BaseModel):
     is_active: Optional[bool] = Field(None, description="Update active status.")
     password: Optional[str] = Field(None, min_length=8, description="New plain text password.")
 
+class PasswordResetLinkRequest(BaseModel):
+    """
+    Schema for requesting a secure reset link before resetting a password.
+    """
+    email: EmailStr = Field(..., example="jane.doe@example.com", description="Email address of the user.")
+
 class PasswordResetRequest(BaseModel):
     """
-    Schema for resetting a password from the forgot-password flow.
+    Schema for resetting a password from the forgot-password flow after reset-link verification.
     """
     email: EmailStr = Field(..., example="jane.doe@example.com", description="Email address of the user.")
     password: str = Field(..., min_length=8, example="NewSecureP@ssw0rd!", description="New password.")
+    token: str = Field(..., min_length=32, example="secure-reset-token", description="One-time password reset token sent by email.")
 
 class Token(BaseModel):
     """

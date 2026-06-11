@@ -13,8 +13,15 @@ class Settings(BaseSettings):
     UPLOAD_DIRECTORY: str = os.getenv("UPLOAD_DIRECTORY", "/home/data/uploads")
     MAX_UPLOAD_SIZE_MB: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "250"))
     MODEL_STORAGE_DIR: str = "trained_ml_models"
-    GROQ_API_KEY: str = ""  # ← add this line
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY","")
     FRONTEND_URL: List[str] = Field(default=["http://localhost:3000"])
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM_EMAIL: str = os.getenv("SMTP_FROM_EMAIL", "")
+    SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", "15"))
 
     class Config:
         case_sensitive = True

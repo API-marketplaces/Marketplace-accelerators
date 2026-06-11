@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getSession, login as loginSvc, logout as logoutSvc, resetPassword as resetPasswordSvc, signup as signupSvc } from '../services/auth'
+import { getSession, login as loginSvc, logout as logoutSvc, requestPasswordResetLink as requestPasswordResetLinkSvc, resetPassword as resetPasswordSvc, signup as signupSvc } from '../services/auth'
 
 export function useAuth() {
   const qc = useQueryClient()
@@ -23,7 +23,11 @@ export function useAuth() {
   })
 
   const resetPassword = useMutation({
-    mutationFn: (data: { email: string; password: string }) => resetPasswordSvc(data),
+    mutationFn: (data: { email: string; password: string; token: string }) => resetPasswordSvc(data),
+  })
+
+  const requestPasswordResetLink = useMutation({
+    mutationFn: (data: { email: string }) => requestPasswordResetLinkSvc(data),
   })
 
   const logout = useMutation({
@@ -45,6 +49,8 @@ export function useAuth() {
 
     resetPassword: resetPassword.mutateAsync,
     resettingPassword: resetPassword.isPending,
+    requestPasswordResetLink: requestPasswordResetLink.mutateAsync,
+    requestingPasswordResetLink: requestPasswordResetLink.isPending,
 
     logout: logout.mutateAsync,
     loggingOut: logout.isPending,

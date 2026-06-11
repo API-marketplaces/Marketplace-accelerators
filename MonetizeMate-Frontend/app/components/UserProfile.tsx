@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState, type ElementType } from 'react'
 import { useRouter } from 'next/navigation'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Compass, Brain, BarChart3, Calendar, LogOut, Clock, ChevronRight } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { getFilesByDecisionMetrics } from '../services/fileService'
+import type { BackendFile } from '../types/File'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -26,41 +28,72 @@ interface Activity {
   description: string
   date: string
   time: string
-  icon: React.ElementType
+  icon: ElementType
   color: string
 }
 
-// ─── Static sample activities (replace with real data as needed) ──────────────
+// ─── Recent activity helpers ──────────────────────────────────────────────────
 
-const RECENT_ACTIVITIES: Activity[] = [
-  {
-    id: '1',
-    title: 'Subscription model recommended',
-    description: 'Strategy Analysis',
-    date: '2024-12-15',
-    time: '2:30 PM',
+function getMetricMeta(metric?: string) {
+  const normalizedMetric = metric?.toLowerCase()
+
+  if (normalizedMetric === 'prediction') {
+    return {
+      description: 'Prediction Upload',
+      icon: Brain,
+      color: '#818cf8',
+    }
+  }
+
+  if (normalizedMetric === 'analytics') {
+    return {
+      description: 'Analytics Upload',
+      icon: BarChart3,
+      color: '#f59e0b',
+    }
+  }
+
+  return {
+    description: 'Strategy Activity',
     icon: Compass,
     color: '#00E5C0',
-  },
-  {
-    id: '2',
-    title: '6-month prediction analysis',
-    description: 'Revenue Forecast',
-    date: '2024-12-14',
-    time: '11:15 AM',
-    icon: Brain,
-    color: '#818cf8',
-  },
-  {
-    id: '3',
-    title: 'Weekly performance review',
-    description: 'API Usage Analysis',
-    date: '2024-12-13',
-    time: '4:45 PM',
-    icon: BarChart3,
-    color: '#f59e0b',
-  },
-]
+  }
+}
+
+function formatActivityDate(value: Date | string) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return { date: 'Unknown date', time: '' }
+  }
+
+  return {
+    date: date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }),
+    time: date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    }),
+  }
+}
+
+function fileToActivity(file: BackendFile): Activity {
+  const metricMeta = getMetricMeta(file.decisionMetrics)
+  const uploadedAt = formatActivityDate(file.upload_time)
+
+  return {
+    id: `${file.decisionMetrics}-${file.id}`,
+    title: file.displayname || file.filename || 'Uploaded API data',
+    description: metricMeta.description,
+    date: uploadedAt.date,
+    time: uploadedAt.time,
+    icon: metricMeta.icon,
+    color: metricMeta.color,
+  }
+}
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
@@ -99,6 +132,44 @@ export default function UserProfile() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [activitiesLoading, setActivitiesLoading] = useState(false)
+
+  useEffect(() => {
+    if (!user || !open) return
+
+    let cancelled = false
+
+    async function loadRecentActivities() {
+      setActivitiesLoading(true)
+
+      const results = await Promise.allSettled([
+        getFilesByDecisionMetrics('analytics'),
+        getFilesByDecisionMetrics('prediction'),
+      ])
+
+      if (cancelled) return
+
+      const files = results
+        .filter((result): result is PromiseFulfilledResult<BackendFile[]> => result.status === 'fulfilled')
+        .flatMap(result => result.value)
+        .sort((first, second) => {
+          const firstTime = new Date(first.upload_time).getTime()
+          const secondTime = new Date(second.upload_time).getTime()
+          return secondTime - firstTime
+        })
+        .slice(0, 3)
+
+      setActivities(files.map(fileToActivity))
+      setActivitiesLoading(false)
+    }
+
+    loadRecentActivities()
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, user])
 
   if (!user) return null
 
@@ -208,7 +279,19 @@ export default function UserProfile() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {RECENT_ACTIVITIES.map(activity => {
+            {activitiesLoading && (
+              <p style={{ margin: '8px 10px 12px', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>
+                Loading recent activity...
+              </p>
+            )}
+
+            {!activitiesLoading && activities.length === 0 && (
+              <p style={{ margin: '8px 10px 12px', fontSize: 12, lineHeight: 1.5, color: 'rgba(255,255,255,0.45)' }}>
+                No recent uploads yet.
+              </p>
+            )}
+
+            {!activitiesLoading && activities.map(activity => {
               const Icon = activity.icon
               return (
                 <div

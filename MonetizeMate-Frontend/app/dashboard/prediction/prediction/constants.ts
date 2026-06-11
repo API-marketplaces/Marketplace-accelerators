@@ -48,8 +48,8 @@ export const PREDICTION_TYPES: PredictionType[] = [
   },
   {
     id: "rate_limits",
-    name: "Rate Limit Prediction",
-    description: "Optimize usage and prevent abuse, impacting tiered pricing strategies",
+    name: "Rate Limit Optimization Forecast",
+    description: "Analyze request patterns, detect abuse, and recommend endpoint-specific rate limits",
     requiredAttributes: ["timestamp", "request_count", "user_id", "endpoint"],
     icon: Shield,
     enabled: false

@@ -1,3 +1,7 @@
+import type { ComponentType } from 'react';
+
+type PredictionIcon = ComponentType<{ className?: string }>;
+
 export interface MLModel {
   id: string;
   name: string;
@@ -6,7 +10,7 @@ export interface MLModel {
   trainingTime: string;
   strengths: string[];
   bestFor: string[];
-  icon: any;
+  icon: PredictionIcon;
   color: string;
 }
 
@@ -15,7 +19,7 @@ export interface PredictionType {
   name: string;
   description: string;
   requiredAttributes: string[];
-  icon: any;
+  icon: PredictionIcon;
   enabled: boolean;
 }
 
@@ -119,6 +123,17 @@ export interface FutureVolumePrediction {
   predicted_days: number;
 }
 
+export interface ModelPerformance {
+  id: string;
+  name: string;
+  description: string;
+  accuracy: number;
+  trainingTime: string;
+  modelType: 'Linear' | 'Ensemble';
+  strengths: string[];
+  bestFor: string[];
+}
+
 
 
 export interface QuotaExceedance {
@@ -137,19 +152,26 @@ export interface QuotaExceedance {
 
 
 
-export interface RateLimitPrediction {
+export interface RateLimitOptimizationItem {
+  endpoint: string;
+  currentLimit: number;
+  recommendedLimit: number;
+  insight: string;
+  status: 'reduce' | 'increase' | 'keep';
+}
 
-  time: string;
-
-  predictedHits: number;
-
+export interface RateLimitOptimizationForecast {
+  modelUsed: string;
+  description: string;
+  forecastInsight: string;
+  recommendations: RateLimitOptimizationItem[];
 }
 
 
 
 export interface ResourceUsagePrediction {
 
-  resource: 'CPU' | 'Memory' | 'Bandwidth' | 'Storage';
+  resource: 'CPU' | 'Memory' | 'Storage';
 
   currentUsage: number;
 
@@ -179,15 +201,19 @@ export interface PredictionData {
 
   anomalies: AnomalyData;
 
+  inputDataAccuracy: number;
+
   peakUsage: PeakUsage[];
 
   errorClassification: ErrorClassification[];
 
   futureVolume: FutureVolumePrediction;
 
+  modelPerformance: ModelPerformance[];
+
   quotaExceedances: QuotaExceedance[];
 
-  rateLimitPredictions: RateLimitPrediction[];
+  rateLimitOptimization: RateLimitOptimizationForecast;
 
   resourceUsagePredictions: ResourceUsagePrediction[];
 

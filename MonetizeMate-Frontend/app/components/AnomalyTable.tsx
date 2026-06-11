@@ -45,7 +45,6 @@ export function AnomalyTable({ anomalies }: AnomalyTableProps) {
           <TableHead className="text-emerald-100/80">Reason</TableHead>
           <TableHead className="text-emerald-100/80">Request Count</TableHead>
           <TableHead className="text-emerald-100/80">Response Time</TableHead>
-          <TableHead className="text-emerald-100/80">CPU Usage</TableHead>
           <TableHead className="text-emerald-100/80">Endpoint</TableHead>
           <TableHead className="text-emerald-100/80">User ID</TableHead>
         </TableRow>
@@ -58,7 +57,6 @@ export function AnomalyTable({ anomalies }: AnomalyTableProps) {
             <TableCell className="text-white/90">{anomaly.reason}</TableCell>
             <TableCell className="text-white/90">{anomaly.request_count}</TableCell>
             <TableCell className="text-white/90">{anomaly.response_time}</TableCell>
-            <TableCell className="text-white/90">{anomaly.cpu_usage}</TableCell>
             <TableCell className="font-medium text-white/90">{anomaly.endpoint}</TableCell>
             <TableCell className="font-medium text-white/90">{anomaly.user_id}</TableCell>
           </TableRow>

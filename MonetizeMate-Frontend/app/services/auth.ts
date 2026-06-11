@@ -32,7 +32,17 @@ export function signup(data: { email: string; password: string; firstName?: stri
   })
 }
 
-export function resetPassword(data: { email: string; password: string }) {
+export function requestPasswordResetLink(data: { email: string }) {
+  return apiFetch<{ ok: true; message?: string }>('/api/auth/forgot-password/request-link', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+}
+
+export function resetPassword(data: { email: string; password: string; token: string }) {
   return apiFetch<{ ok: true; message?: string }>('/api/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify(data),

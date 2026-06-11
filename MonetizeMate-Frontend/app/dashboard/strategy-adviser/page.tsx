@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { ArrowLeft, BriefcaseBusiness, Compass, MessageSquare, Sparkles } from "lucide-react";
+import { ArrowLeft, Bot, BriefcaseBusiness, Compass, MessageSquare, Sparkles } from "lucide-react";
 import IndustrySelectionDialog from '@/app/components/IndustrySelectionDialog';
 import { useAuth } from "@/app/hooks/useAuth";
 
@@ -43,11 +43,11 @@ export default function StrategyAdviserPage() {
 
                 <div className="strategy-grid">
                     <Card
-                        className="strategy-card"
+                        className="strategy-option"
                         onClick={() => router.push('/dashboard/strategy-adviser/business-data')}
                     >
-                        <div className="strategy-card-content">
-                            <span className="strategy-card-icon">
+                        <div className="strategy-option-body">
+                            <span className="strategy-option-icon">
                                 <BriefcaseBusiness className="w-8 h-8" />
                             </span>
                             <h3>Business Data</h3>
@@ -65,7 +65,7 @@ export default function StrategyAdviserPage() {
                                 </ul>
                             </div>
 
-                            <Button className="strategy-card-button">
+                            <Button className="strategy-option-button">
                                 <BriefcaseBusiness className="w-4 h-4 mr-2" />
                                 Enter Business Data
                             </Button>
@@ -73,11 +73,11 @@ export default function StrategyAdviserPage() {
                     </Card>
 
                     <Card
-                        className="strategy-card"
+                        className="strategy-option"
                         onClick={() => setShowIndustryDialog(true)}
                     >
-                        <div className="strategy-card-content">
-                            <span className="strategy-card-icon strategy-card-icon-soft">
+                        <div className="strategy-option-body">
+                            <span className="strategy-option-icon strategy-option-icon-soft">
                                 <MessageSquare className="w-8 h-8" />
                             </span>
                             <h3>Answer Questionnaire</h3>
@@ -95,9 +95,40 @@ export default function StrategyAdviserPage() {
                                 </ul>
                             </div>
 
-                            <Button className="strategy-card-button">
+                            <Button className="strategy-option-button">
                                 <MessageSquare className="w-4 h-4 mr-2" />
                                 Answer Questions
+                            </Button>
+                        </div>
+                    </Card>
+
+                    <Card
+                        className="strategy-option strategy-chat-option"
+                        onClick={() => router.push('/dashboard/strategy-adviser/ai-chat?fresh=1')}
+                    >
+                        <div className="strategy-option-body">
+                            <span className="strategy-option-icon strategy-option-icon-chat">
+                                <Bot className="w-8 h-8" />
+                            </span>
+                            <h3>AI Chat Advisor</h3>
+                            <p>
+                                Just describe your business naturally. The AI asks smart follow-up questions and recommends strategies conversationally.
+                            </p>
+
+                            <div className="strategy-info">
+                                <h4>Conversational Mode</h4>
+                                <ul>
+                                    <li>No forms, just natural conversation</li>
+                                    <li>AI asks exactly what it needs</li>
+                                    <li>Recommendations emerge from dialogue</li>
+                                    <li>Fastest path to personalized advice</li>
+                                </ul>
+                            </div>
+
+                            <Button className="strategy-option-button">
+                                <Bot className="w-4 h-4 mr-2" />
+                                Chat with AI
+                                <span className="strategy-new-pill">New</span>
                             </Button>
                         </div>
                     </Card>
@@ -114,9 +145,9 @@ export default function StrategyAdviserPage() {
 
                 <div className="strategy-success">
                     <Sparkles className="w-8 h-8" />
-                    <h3>Both Methods Lead to Success</h3>
+                    <h3>Every Path Leads to Success</h3>
                     <p>
-                        Whether you enter business data or answer questions manually, you&apos;ll receive high-quality,
+                        Whether you chat with AI, enter business data, or answer questions manually, you&apos;ll receive high-quality,
                         personalized monetization recommendations tailored to your specific business needs.
                     </p>
                 </div>
@@ -124,7 +155,7 @@ export default function StrategyAdviserPage() {
             <style>{`
                 .strategy-page {
                     min-height: 100vh;
-                    padding: 48px 24px 72px;
+                    padding: 40px 32px 72px;
                     background:
                         radial-gradient(circle at 18% 0%, rgba(0, 229, 192, 0.14), transparent 34%),
                         linear-gradient(135deg, #060e1e 0%, #0b1f36 52%, #071420 100%);
@@ -133,15 +164,15 @@ export default function StrategyAdviserPage() {
                 }
 
                 .strategy-shell {
-                    width: min(1120px, 100%);
+                    width: min(1280px, 100%);
                     margin: 0 auto;
                 }
 
                 .strategy-header {
                     display: flex;
                     align-items: center;
-                    gap: 24px;
-                    margin-bottom: 34px;
+                    gap: 32px;
+                    margin-bottom: 44px;
                 }
 
                 .strategy-back {
@@ -161,7 +192,7 @@ export default function StrategyAdviserPage() {
                 .strategy-title-row {
                     display: flex;
                     align-items: center;
-                    gap: 18px;
+                    gap: 22px;
                 }
 
                 .strategy-title-icon {
@@ -192,16 +223,16 @@ export default function StrategyAdviserPage() {
 
                 .strategy-grid {
                     display: grid;
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                    gap: 28px;
+                    grid-template-columns: repeat(3, minmax(320px, 1fr));
+                    gap: 34px;
                 }
 
-                .strategy-card {
-                    min-height: 430px;
-                    padding: 28px;
-                    border-radius: 18px;
+                .strategy-option {
+                    min-height: 500px;
+                    padding: 38px 34px 32px;
+                    border-radius: 12px;
                     border: 1px solid rgba(0, 229, 192, 0.22);
-                    background: rgba(17, 34, 54, 0.92);
+                    background: rgba(17, 34, 54, 0.88) !important;
                     box-shadow:
                         0 28px 80px rgba(0, 0, 0, 0.28),
                         inset 0 1px 0 rgba(255, 255, 255, 0.06);
@@ -209,24 +240,24 @@ export default function StrategyAdviserPage() {
                     transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
                 }
 
-                .strategy-card:hover {
+                .strategy-option:hover {
                     transform: translateY(-4px);
                     border-color: rgba(143, 252, 240, 0.48);
                     box-shadow: 0 30px 86px rgba(0, 229, 192, 0.15);
                 }
 
-                .strategy-card-content {
+                .strategy-option-body {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     text-align: center;
-                    gap: 18px;
+                    gap: 22px;
                 }
 
-                .strategy-card-icon {
-                    width: 68px;
-                    height: 68px;
+                .strategy-option-icon {
+                    width: 76px;
+                    height: 76px;
                     border-radius: 18px;
                     display: inline-flex;
                     align-items: center;
@@ -236,23 +267,29 @@ export default function StrategyAdviserPage() {
                     border: 1px solid rgba(0, 229, 192, 0.22);
                 }
 
-                .strategy-card-icon-soft {
+                .strategy-option-icon-soft {
                     background: rgba(220, 252, 231, 0.9);
                     color: #047857;
                 }
 
-                .strategy-card h3 {
-                    margin: 6px 0 0;
+                .strategy-option-icon-chat {
+                    background: rgba(0, 229, 192, 0.14);
+                    color: #00e5c0;
+                }
+
+                .strategy-option h3 {
+                    margin: 2px 0 0;
                     color: #ffffff;
-                    font-size: 22px;
+                    font-size: 24px;
+                    line-height: 1.2;
                     font-weight: 800;
                 }
 
-                .strategy-card p {
+                .strategy-option p {
                     margin: 0;
-                    max-width: 390px;
+                    max-width: 360px;
                     color: #00e5c0;
-                    font-size: 15px;
+                    font-size: 16px;
                     line-height: 1.65;
                     font-weight: 700;
                 }
@@ -260,17 +297,16 @@ export default function StrategyAdviserPage() {
                 .strategy-info {
                     width: 100%;
                     margin-top: 4px;
-                    padding: 18px;
-                    border-radius: 12px;
-                    border: 1px solid rgba(0, 229, 192, 0.16);
-                    background: rgba(31, 47, 68, 0.72);
+                    padding: 26px 0 0;
+                    border-top: 1px solid rgba(0, 229, 192, 0.22);
+                    background: transparent;
                     text-align: left;
                 }
 
                 .strategy-info h4 {
-                    margin: 0 0 10px;
+                    margin: 0 0 14px;
                     color: #ffffff;
-                    font-size: 14px;
+                    font-size: 15px;
                     font-weight: 800;
                     text-align: center;
                 }
@@ -280,47 +316,61 @@ export default function StrategyAdviserPage() {
                     padding: 0;
                     list-style: none;
                     display: grid;
-                    gap: 7px;
+                    gap: 14px;
                 }
 
                 .strategy-info li {
-                    color: rgba(255, 255, 255, 0.72);
-                    font-size: 13px;
+                    display: grid;
+                    grid-template-columns: 8px 1fr;
+                    align-items: start;
+                    gap: 12px;
+                    color: rgba(255, 255, 255, 0.78);
+                    font-size: 14px;
+                    line-height: 1.45;
                     font-weight: 700;
                 }
 
                 .strategy-info li::before {
                     content: '';
-                    display: inline-block;
-                    width: 6px;
-                    height: 6px;
-                    margin-right: 8px;
+                    width: 7px;
+                    height: 7px;
+                    margin-top: 7px;
                     border-radius: 50%;
                     background: #00e5c0;
-                    vertical-align: 1px;
                 }
 
-                .strategy-card-button {
+                .strategy-option-button {
                     width: 100%;
-                    height: 46px;
+                    height: 52px;
                     margin-top: auto;
                     border-radius: 10px;
-                    background: #11d3ba;
-                    color: #061421;
+                    border: 1px solid rgba(0, 229, 192, 0.34);
+                    background: rgba(0, 229, 192, 0.14);
+                    color: #ffffff;
                     font-weight: 900;
+                    gap: 6px;
                 }
 
-                .strategy-card-button:hover {
+                .strategy-option-button:hover {
                     background: #38e6d0;
                     color: #061421;
                 }
 
+                .strategy-new-pill {
+                    margin-left: auto;
+                    padding: 3px 9px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(6, 20, 33, 0.22);
+                    font-size: 11px;
+                    line-height: 1.2;
+                }
+
                 .strategy-success {
                     width: min(760px, 100%);
-                    margin: 44px auto 0;
+                    margin: 52px auto 0;
                     padding: 28px;
                     text-align: center;
-                    border-radius: 18px;
+                    border-radius: 12px;
                     border: 1px solid rgba(0, 229, 192, 0.22);
                     background: rgba(17, 34, 54, 0.92);
                     box-shadow:
@@ -349,11 +399,30 @@ export default function StrategyAdviserPage() {
                     font-weight: 700;
                 }
 
-                @media (max-width: 820px) {
+                @media (max-width: 1100px) {
                     .strategy-grid {
                         grid-template-columns: 1fr;
                     }
 
+                    .strategy-option {
+                        min-height: auto;
+                    }
+
+                    .strategy-option-body {
+                        align-items: flex-start;
+                        text-align: left;
+                    }
+
+                    .strategy-option p {
+                        max-width: 720px;
+                    }
+
+                    .strategy-info h4 {
+                        text-align: left;
+                    }
+                }
+
+                @media (max-width: 820px) {
                     .strategy-header {
                         align-items: flex-start;
                         flex-direction: column;
@@ -362,15 +431,20 @@ export default function StrategyAdviserPage() {
 
                 @media (max-width: 640px) {
                     .strategy-page {
-                        padding: 28px 14px 48px;
+                        padding: 28px 16px 48px;
                     }
 
                     .strategy-title-row h1 {
                         font-size: 27px;
                     }
 
-                    .strategy-card {
-                        padding: 22px;
+                    .strategy-option {
+                        padding: 24px;
+                    }
+
+                    .strategy-option-icon {
+                        width: 64px;
+                        height: 64px;
                     }
                 }
             `}</style>

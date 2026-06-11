@@ -1,11 +1,11 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { ArrowLeft, Sparkles, Rocket, CheckCircle, AlertCircle, Star } from 'lucide-react';
+import { ArrowLeft, Sparkles, Rocket, CheckCircle, AlertCircle, Star, MessageCircle } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { calculateRecommendations } from '@/app/constants/strategy-helpers';
 import { QuestionnaireAnswers } from '@/app/types/QuestionnaireAnswers';
@@ -31,30 +31,61 @@ interface Recommendation {
 function RecommendationsPageInner() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-    const [analysisSource, setAnalysisSource] = useState('');
-    const [selectedIndustry, setSelectedIndustry] = useState('');
-
-    useEffect(() => {
+    const recommendationState = useMemo(() => {
+        const recommendationsData = searchParams.get('recommendations');
         const answersData = searchParams.get('answers');
         const source = searchParams.get('analysisSource');
         const industry = searchParams.get('selectedIndustry');
 
-        if (answersData && source && industry) {
+        if (recommendationsData) {
+            try {
+                const parsed = JSON.parse(recommendationsData);
+                const aiRecommendations = Array.isArray(parsed)
+                    ? parsed
+                    : Array.isArray(parsed.recommendations)
+                        ? parsed.recommendations
+                        : [];
+
+                if (!aiRecommendations.length) {
+                    throw new Error('No AI recommendations found');
+                }
+
+                return {
+                    recommendations: aiRecommendations as Recommendation[],
+                    analysisSource: parsed.analysisSource || source || 'ai-chat',
+                    selectedIndustry: parsed.selectedIndustry || industry || '',
+                    invalid: false,
+                };
+            } catch (error) {
+                console.error("Failed to parse AI recommendations", error);
+                return { recommendations: [], analysisSource: '', selectedIndustry: '', invalid: true };
+            }
+        } else if (answersData && source && industry) {
             try {
                 const answers: Partial<QuestionnaireAnswers> = JSON.parse(answersData);
                 const calculatedRecommendations = calculateRecommendations(answers, industry);
-                setRecommendations(calculatedRecommendations as Recommendation[]);
-                setAnalysisSource(source);
-                setSelectedIndustry(industry || '');
+                return {
+                    recommendations: calculatedRecommendations as Recommendation[],
+                    analysisSource: source,
+                    selectedIndustry: industry || '',
+                    invalid: false,
+                };
             } catch (error) {
                 console.error("Failed to parse data or calculate recommendations", error);
-                router.push('/dashboard/strategy-adviser');
+                return { recommendations: [], analysisSource: '', selectedIndustry: '', invalid: true };
             }
-        } else {
+        }
+
+        return { recommendations: [], analysisSource: '', selectedIndustry: '', invalid: true };
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (recommendationState.invalid) {
             router.push('/dashboard/strategy-adviser');
         }
-    }, [searchParams, router]);
+    }, [recommendationState.invalid, router]);
+
+    const { recommendations, analysisSource, selectedIndustry } = recommendationState;
 
     const onStartImplementation = (strategy: Recommendation) => {
         const params = new URLSearchParams();
@@ -78,13 +109,23 @@ function RecommendationsPageInner() {
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Start Over
                     </Button>
+                    {analysisSource === 'ai-chat' && (
+                        <Button
+                            variant="outline"
+                            onClick={() => router.push('/dashboard/strategy-adviser/ai-chat?resume=1')}
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                        >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Back to AI Chat
+                        </Button>
+                    )}
                     <div className="flex-grow">
                         <div className="flex items-center gap-4">
                             <Sparkles className="w-8 h-8 text-blue-600" />
                             <div>
                                 <h1 className="text-2xl text-blue-900">Your Monetization Strategy Recommendations</h1>
                                 <p className="text-blue-700">
-                                    Based on {analysisSource === 'file' ? 'your data analysis' : 'your questionnaire responses'}
+                                    Based on {analysisSource === 'file' ? 'your data analysis' : analysisSource === 'ai-chat' ? 'your AI chat conversation' : 'your questionnaire responses'}
                                     {selectedIndustry && ` for ${selectedIndustry}`}
                                 </p>
                             </div>

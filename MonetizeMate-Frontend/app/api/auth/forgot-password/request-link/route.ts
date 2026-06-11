@@ -4,25 +4,23 @@ const API = process.env.FASTAPI_BASE_URL || process.env.FASTAPI_URL || 'http://l
 
 export async function POST(req: Request) {
   try {
-    const { email, password, token } = await req.json()
+    const { email } = await req.json()
 
-    const response = await fetch(`${API}/api/v1/forgot-password`, {
+    const response = await fetch(`${API}/api/v1/forgot-password/request-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: String(email || '').trim().toLowerCase(),
-        password: String(password || '').trim(),
-        token: String(token || '').trim(),
       }),
     })
 
-    const body = await response.json().catch(() => ({ detail: 'Password reset failed' }))
+    const body = await response.json().catch(() => ({ detail: 'Reset link request failed' }))
 
     if (!response.ok) {
       return NextResponse.json(body, { status: response.status })
     }
 
-    return NextResponse.json({ ok: true, message: body.message || 'Password updated successfully' })
+    return NextResponse.json({ ok: true, message: body.message || 'Password reset link sent to your email' })
   } catch {
     return NextResponse.json({ message: 'Bad request' }, { status: 400 })
   }

@@ -115,8 +115,17 @@ def _inspect_excel(file_path: str, metrics: str) -> FileInspection:
 def _inspect_saved_file(file_path: str, file_extension: str, metrics: str) -> FileInspection:
     if file_extension == ".csv":
         inspection = _inspect_csv(file_path, metrics)
-    else:
+    elif file_extension in [".xlsx", ".xls"]:
         inspection = _inspect_excel(file_path, metrics)
+    elif file_extension in [".json", ".log"]:
+        from app.core.file_parsers import load_log_or_json_to_df
+        df = load_log_or_json_to_df(file_path)
+        inspection = FileInspection(columns=list(df.columns), records_count=len(df))
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file extension: {file_extension}"
+        )
 
     if metrics == "analytics":
         validate_analytics_columns(inspection.columns)
@@ -161,11 +170,11 @@ async def upload_file(
 
     try:
         # Restrict allowed file types
-        allowed_extensions = [".csv", ".xlsx"]
+        allowed_extensions = [".csv", ".xlsx", ".xls", ".json", ".log"]
         if file_extension.lower() not in allowed_extensions:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only CSV and Excel (.xlsx) files are allowed."
+                detail="Only CSV, Excel, JSON and Log (.log) files are allowed."
             )
 
         file_size = await run_in_threadpool(_copy_upload_to_disk, file, file_location)
