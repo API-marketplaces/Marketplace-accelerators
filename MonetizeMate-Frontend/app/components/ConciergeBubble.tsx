@@ -1,62 +1,119 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
-import { Bot, X, Send, Sparkles, ChevronDown } from "lucide-react";
+
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Bot, ChevronDown, HelpCircle, MessageSquare, Paperclip, Send, X } from "lucide-react";
+import { useAuth } from "@/app/hooks/useAuth";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  canContactSupport?: boolean;
 }
 
 interface ConciergeBubbleProps {
   fileId?: string | number;
 }
 
+type HelpView = "chat" | "support";
+
+const DEFAULT_SUGGESTIONS = [
+  "What is MonetizeMate?",
+  "How do I get monetization recommendations?",
+  "How can I analyze API performance?",
+  "I need support",
+];
+
+const APPLICATIONS = [
+  "MonetizeMate",
+  "Strategy Advisor",
+  "Analytics Workbench",
+  "Prediction Model",
+  "API Statistics",
+  "Account and Login",
+];
+
+function answerFromLocalKnowledge(question: string): string | null {
+  const text = question.toLowerCase();
+
+  if (text.includes("support") || text.includes("human") || text.includes("contact")) {
+    return "I can help connect you with the support team. Open the support form, add your email and details, and the team can follow up.";
+  }
+
+  if (text.includes("what is") || text.includes("monetizemate") || text.includes("monetize mate")) {
+    return "MonetizeMate is an AI-powered API monetization workspace. It helps teams choose pricing models, create monetization recommendations, analyze API usage, review client and error trends, and forecast growth from uploaded API data.";
+  }
+
+  if (text.includes("strategy") || text.includes("recommendation") || text.includes("pricing")) {
+    return "Use the Monetization Strategy Advisor to enter business data or answer the questionnaire. MonetizeMate then recommends pricing models such as tiered, pay-per-use, freemium, subscription, or hybrid approaches with implementation guidance.";
+  }
+
+  if (text.includes("analytics") || text.includes("performance") || text.includes("api stats")) {
+    return "The Analytics Workbench helps you inspect uploaded API data, including usage trends, client behavior, distribution, rankings, response patterns, and operational signals that can inform monetization.";
+  }
+
+  if (text.includes("prediction") || text.includes("forecast") || text.includes("growth")) {
+    return "The Prediction Model area uses historical API data to forecast growth and highlight patterns that can guide pricing, capacity, and revenue planning.";
+  }
+
+  if (text.includes("upload") || text.includes("file") || text.includes("data")) {
+    return "You can upload API logs or monitoring data from the Analytics Workbench. MonetizeMate uses that data for statistics, analysis, forecasting, and recommendation workflows.";
+  }
+
+  return null;
+}
+
 export default function ConciergeBubble({ fileId }: ConciergeBubbleProps) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<HelpView>("chat");
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: fileId
-        ? "👋 Hi! Ask me anything about this dashboard — top clients, errors, revenue opportunities, or monetization strategy!"
-        : "👋 Hi! I'm your AI Concierge. Ask me anything about API monetization!",
+      content: "Hi, I can help with MonetizeMate, strategy recommendations, analytics, predictions, uploads, and account questions.",
     },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [unread, setUnread] = useState(0);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>(DEFAULT_SUGGESTIONS);
+  const [supportEmail, setSupportEmail] = useState("");
+  const [supportApplication, setSupportApplication] = useState("MonetizeMate");
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportFiles, setSupportFiles] = useState<File[]>([]);
+  const [supportStatus, setSupportStatus] = useState<string | null>(null);
+  const [supportSending, setSupportSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) {
-      setUnread(0);
-      setTimeout(() => inputRef.current?.focus(), 100);
+    if (open && view === "chat") {
+      window.setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [open]);
+  }, [open, view]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loading]);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
       try {
         const url = fileId ? `/api/concierge?fileId=${fileId}` : `/api/concierge`;
         const res = await fetch(url);
+        if (!res.ok) return;
         const data = await res.json();
-        setSuggestions((data.suggestions || []).slice(0, 4));
+        const nextSuggestions = (data.suggestions || []).slice(0, 3);
+        setSuggestions(nextSuggestions.length ? ["What is MonetizeMate?", ...nextSuggestions] : DEFAULT_SUGGESTIONS);
       } catch {
-        setSuggestions([
-          "What are my top APIs?",
-          "Which clients have the most errors?",
-          "How can I monetize better?",
-          "Summarize my API performance",
-        ]);
+        setSuggestions(DEFAULT_SUGGESTIONS);
       }
     };
+
     fetchSuggestions();
   }, [fileId]);
+
+  const appendAssistant = (content: string, canContactSupport = false) => {
+    setMessages((prev) => [...prev, { role: "assistant", content, canContactSupport }]);
+  };
 
   const sendMessage = async (text?: string) => {
     const msg = text || input.trim();
@@ -66,6 +123,15 @@ export default function ConciergeBubble({ fileId }: ConciergeBubbleProps) {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
+
+    const localAnswer = answerFromLocalKnowledge(msg);
+    if (localAnswer) {
+      window.setTimeout(() => {
+        appendAssistant(localAnswer, msg.toLowerCase().includes("support"));
+        setLoading(false);
+      }, 350);
+      return;
+    }
 
     try {
       const res = await fetch("/api/concierge", {
@@ -77,164 +143,199 @@ export default function ConciergeBubble({ fileId }: ConciergeBubbleProps) {
           file_id: fileId ? parseInt(String(fileId)) : null,
         }),
       });
-      const data = await res.json();
-      const aiMsg: Message = {
-        role: "assistant",
-        content: data.response || "Sorry, I couldn't respond. Please try again.",
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      if (!open) setUnread((u) => u + 1);
+      const data = await res.json().catch(() => ({}));
+      appendAssistant(
+        data.response || "I could not find a clear answer. You can send this to support and the team will follow up.",
+        !data.response
+      );
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "⚠️ Connection error. Please try again." },
-      ]);
+      appendAssistant("I could not reach the AI service. You can send your question to support and the team will follow up.", true);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderContent = (content: string) => {
-    return content.split("\n").map((line, i) => {
-      if (line.startsWith("- ") || line.startsWith("• ")) {
-        return (
-          <p key={i} className="flex gap-1.5 mt-0.5">
-            <span className="text-blue-400">•</span>
-            <span>{line.slice(2).replace(/\*\*(.*?)\*\*/g, "$1")}</span>
-          </p>
-        );
+  const submitSupport = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const email = (supportEmail || user?.email || "").trim();
+    if (!email || !supportMessage.trim() || supportSending) return;
+
+    setSupportSending(true);
+    setSupportStatus(null);
+
+    const formData = new FormData();
+    formData.set("email", email);
+    formData.set("application", supportApplication);
+    formData.set("message", supportMessage.trim());
+    supportFiles.forEach((file) => formData.append("attachments", file));
+
+    try {
+      const res = await fetch("/api/support", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Unable to send support message.");
       }
-      if (line.trim() === "") return <br key={i} />;
-      const parts = line.split(/\*\*(.*?)\*\*/g);
-      return (
-        <p key={i} className="mt-0.5">
-          {parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}
-        </p>
-      );
-    });
+      setSupportStatus(data.message || "Thanks, your message has been sent to support.");
+      setSupportMessage("");
+      setSupportFiles([]);
+    } catch (error) {
+      setSupportStatus(error instanceof Error ? error.message : "Unable to send support message.");
+    } finally {
+      setSupportSending(false);
+    }
   };
 
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-      {/* Chat Panel */}
-      {open && (
-        <div className="w-80 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/50 flex flex-col overflow-hidden"
-          style={{ height: "460px" }}>
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-white text-sm font-semibold leading-none">AI Concierge</p>
-                <p className="text-blue-200 text-xs mt-0.5">Powered by Groq Llama 3</p>
-              </div>
-            </div>
-            <button onClick={() => setOpen(false)}
-              className="text-white/70 hover:text-white transition-colors">
-              <ChevronDown className="w-5 h-5" />
-            </button>
-          </div>
+  const renderContent = (content: string) =>
+    content.split("\n").map((line, index) => (
+      <p key={`${line}-${index}`} className="help-message-line">
+        {line}
+      </p>
+    ));
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                {msg.role === "assistant" && (
-                  <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Bot className="w-3 h-3 text-white" />
+  return (
+    <div className="global-help">
+      {open && (
+        <section className="global-help-panel" aria-label="MonetizeMate help">
+          <header className="global-help-header">
+            <button
+              type="button"
+              className={view === "chat" ? "global-help-tab active" : "global-help-tab"}
+              onClick={() => setView("chat")}
+            >
+              <Bot aria-hidden="true" />
+              Ask
+            </button>
+            <button
+              type="button"
+              className={view === "support" ? "global-help-tab active" : "global-help-tab"}
+              onClick={() => setView("support")}
+            >
+              <MessageSquare aria-hidden="true" />
+              Leave a message
+            </button>
+            <button type="button" className="global-help-minimize" onClick={() => setOpen(false)} aria-label="Close help">
+              <ChevronDown aria-hidden="true" />
+            </button>
+          </header>
+
+          {view === "chat" ? (
+            <>
+              <div className="global-help-messages">
+                {messages.map((message, index) => (
+                  <div key={`${message.role}-${index}`} className={`global-help-row ${message.role}`}>
+                    {message.role === "assistant" && (
+                      <span className="global-help-avatar">
+                        <Bot aria-hidden="true" />
+                      </span>
+                    )}
+                    <div className="global-help-bubble">
+                      {renderContent(message.content)}
+                      {message.canContactSupport && (
+                        <button type="button" className="global-help-link" onClick={() => setView("support")}>
+                          Send to support
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {loading && (
+                  <div className="global-help-row assistant">
+                    <span className="global-help-avatar">
+                      <Bot aria-hidden="true" />
+                    </span>
+                    <div className="global-help-bubble muted">Thinking...</div>
                   </div>
                 )}
-                <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed
-                  ${msg.role === "assistant"
-                    ? "bg-white/8 border border-white/8 text-slate-200"
-                    : "bg-blue-600 text-white"}`}>
-                  {renderContent(msg.content)}
-                </div>
+                <div ref={messagesEndRef} />
               </div>
-            ))}
 
-            {loading && (
-              <div className="flex gap-2">
-                <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-3 h-3 text-white" />
+              {messages.length <= 1 && (
+                <div className="global-help-suggestions">
+                  {suggestions.slice(0, 4).map((suggestion) => (
+                    <button key={suggestion} type="button" onClick={() => sendMessage(suggestion)}>
+                      {suggestion}
+                    </button>
+                  ))}
                 </div>
-                <div className="bg-white/8 border border-white/8 rounded-xl px-3 py-2">
-                  <div className="flex gap-1 items-center h-3">
-                    {[0, 150, 300].map((delay) => (
-                      <div key={delay} className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce"
-                        style={{ animationDelay: `${delay}ms` }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              )}
 
-          {/* Suggestions (shown only at start) */}
-          {messages.length <= 1 && suggestions.length > 0 && !loading && (
-            <div className="px-3 pb-2 flex-shrink-0">
-              <p className="text-slate-500 text-xs mb-1.5 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Try asking:
-              </p>
-              <div className="flex flex-col gap-1">
-                {suggestions.slice(0, 3).map((s, i) => (
-                  <button key={i} onClick={() => sendMessage(s)}
-                    className="text-left text-xs text-slate-300 hover:text-white bg-white/5 hover:bg-white/10
-                      border border-white/8 rounded-lg px-2.5 py-1.5 transition-all truncate">
-                    {s}
-                  </button>
-                ))}
+              <div className="global-help-compose">
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => event.key === "Enter" && sendMessage()}
+                  placeholder="Ask anything about MonetizeMate..."
+                  disabled={loading}
+                />
+                <button type="button" onClick={() => sendMessage()} disabled={loading || !input.trim()} aria-label="Send">
+                  <Send aria-hidden="true" />
+                </button>
               </div>
-            </div>
+            </>
+          ) : (
+            <form className="global-help-support" onSubmit={submitSupport}>
+              <label>
+                Email address
+                <input
+                  type="email"
+                  value={supportEmail || user?.email || ""}
+                  onChange={(event) => setSupportEmail(event.target.value)}
+                  required
+                />
+              </label>
+
+              <label>
+                Select Application
+                <select value={supportApplication} onChange={(event) => setSupportApplication(event.target.value)}>
+                  {APPLICATIONS.map((application) => (
+                    <option key={application} value={application}>
+                      {application}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                How can we help you?
+                <textarea
+                  value={supportMessage}
+                  onChange={(event) => setSupportMessage(event.target.value)}
+                  rows={5}
+                  required
+                />
+              </label>
+
+              <label className="global-help-upload">
+                <Paperclip aria-hidden="true" />
+                <span>{supportFiles.length ? `${supportFiles.length} file(s) selected` : "Add up to 5 files"}</span>
+                <input
+                  type="file"
+                  multiple
+                  onChange={(event) => setSupportFiles(Array.from(event.target.files || []).slice(0, 5))}
+                />
+              </label>
+
+              {supportStatus && <p className="global-help-status">{supportStatus}</p>}
+
+              <div className="global-help-footer">
+                <span>MonetizeMate support</span>
+                <button type="submit" disabled={supportSending || !(supportEmail || user?.email || "").trim() || !supportMessage.trim()}>
+                  {supportSending ? "Sending" : "Send"}
+                </button>
+              </div>
+            </form>
           )}
-
-          {/* Input */}
-          <div className="border-t border-white/10 px-3 py-2.5 flex gap-2 flex-shrink-0">
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Ask about your data..."
-              disabled={loading}
-              className="flex-1 bg-white/8 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white
-                placeholder-slate-500 outline-none focus:border-blue-500/50 transition-colors"
-            />
-            <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
-              className="w-7 h-7 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:cursor-not-allowed
-                rounded-lg flex items-center justify-center transition-colors flex-shrink-0">
-              <Send className="w-3 h-3 text-white" />
-            </button>
-          </div>
-        </div>
+        </section>
       )}
 
-      {/* Floating Button */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all duration-300
-          ${open
-            ? "bg-slate-700 hover:bg-slate-600"
-            : "bg-gradient-to-br from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 hover:scale-110"
-          } relative`}
-      >
-        {open
-          ? <X className="w-6 h-6 text-white" />
-          : <Bot className="w-6 h-6 text-white" />
-        }
-        {/* Unread badge */}
-        {unread > 0 && !open && (
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs font-bold">{unread}</span>
-          </div>
-        )}
-        {/* Pulse ring when closed */}
-        {!open && (
-          <div className="absolute inset-0 rounded-2xl bg-blue-500/30 animate-ping" />
-        )}
+      <button type="button" className="global-help-button" onClick={() => setOpen((current) => !current)}>
+        {open ? <X aria-hidden="true" /> : <HelpCircle aria-hidden="true" />}
+        <span>Help</span>
       </button>
     </div>
   );

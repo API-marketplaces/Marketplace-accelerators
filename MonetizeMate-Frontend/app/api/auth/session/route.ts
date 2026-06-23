@@ -1,18 +1,22 @@
 import { NextResponse } from 'next/server'
 import { cookies as nextCookies } from 'next/headers'
 
+const API = process.env.FASTAPI_BASE_URL || process.env.FASTAPI_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const COOKIE = process.env.JWT_COOKIE_NAME || 'session'
+type SessionCookie = { name: string; value: string }
+
 export async function GET(req: Request) {
   // Read cookie using Next.js server helpers (works in Edge/Node runtimes)
   const cookieStore = await nextCookies()
-  let sessionCookie = cookieStore.get(process.env.JWT_COOKIE_NAME || 'session')
+  let sessionCookie: SessionCookie | undefined = cookieStore.get(COOKIE)
 
   // Fallback: try to parse cookie header if cookie helper didn't find it
   if (!sessionCookie) {
     const cookieHeader = req.headers.get('cookie') || ''
-    const match = cookieHeader.split(';').map(c => c.trim()).find(c => c.startsWith((process.env.JWT_COOKIE_NAME || 'session') + '='))
+    const match = cookieHeader.split(';').map(c => c.trim()).find(c => c.startsWith(`${COOKIE}=`))
     if (match) {
       const [, value] = match.split('=')
-      sessionCookie = { name: process.env.JWT_COOKIE_NAME || 'session', value } as any
+      sessionCookie = { name: COOKIE, value }
     }
   }
 
@@ -23,8 +27,7 @@ export async function GET(req: Request) {
 
   // Validate token and fetch user info from FastAPI backend
   try {
-    // const apiUrl = 'http://localhost:8000/api/v1/users/me';
-    const apiUrl = `${process.env.FASTAPI_URL || 'http://localhost:8000'}/api/v1/users/me`;
+    const apiUrl = `${API}/api/v1/users/me`;
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {

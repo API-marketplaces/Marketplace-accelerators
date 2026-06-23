@@ -1,0 +1,47 @@
+2026-06-17 09:15:22.104 INFO  [REQ-1001] [http-nio-8080-exec-1] com.company.api.CustomerAPI - Received request: POST /api/v1/customers
+2026-06-17 09:15:22.108 DEBUG [REQ-1001] [http-nio-8080-exec-1] com.company.api.CustomerAPI - Headers: {Authorization=Bearer eyJhbGciOi..., Content-Type=application/json}
+2026-06-17 09:15:22.112 DEBUG [REQ-1001] [http-nio-8080-exec-1] com.company.api.CustomerAPI - Request Payload: {"customerId":"CUST12345","name":"John Doe","email":"[john.doe@example.com](mailto:john.doe@example.com)","country":"US"}
+2026-06-17 09:15:22.845 INFO  [REQ-1001] [http-nio-8080-exec-1] com.company.service.CustomerService - Customer created successfully: CUST12345
+2026-06-17 09:15:22.852 INFO  [REQ-1001] [http-nio-8080-exec-1] com.company.api.CustomerAPI - Response Status: 201 Created
+2026-06-17 09:15:22.855 DEBUG [REQ-1001] [http-nio-8080-exec-1] com.company.api.CustomerAPI - Response Payload: {"status":"SUCCESS","customerId":"CUST12345"}
+
+2026-06-17 09:18:10.223 INFO  [REQ-1002] [http-nio-8080-exec-2] com.company.api.PaymentAPI - Received request: POST /api/v1/payments
+2026-06-17 09:18:10.225 DEBUG [REQ-1002] [http-nio-8080-exec-2] com.company.api.PaymentAPI - Request Payload: {"transactionId":"TXN987654","amount":499.99,"currency":"USD"}
+2026-06-17 09:18:12.507 ERROR [REQ-1002] [http-nio-8080-exec-2] com.company.service.PaymentService - Payment gateway timeout for transaction TXN987654
+java.net.SocketTimeoutException: Read timed out
+at java.net.SocketInputStream.socketRead0(Native Method)
+at java.net.SocketInputStream.read(SocketInputStream.java:152)
+at com.company.gateway.PaymentGatewayClient.process(PaymentGatewayClient.java:88)
+at com.company.service.PaymentService.execute(PaymentService.java:47)
+
+2026-06-17 09:20:45.312 INFO  [REQ-1003] [http-nio-8080-exec-3] com.company.api.OrderAPI - Received request: GET /api/v1/orders/ORD100234
+2026-06-17 09:20:45.528 INFO  [REQ-1003] [http-nio-8080-exec-3] com.company.service.OrderService - Order retrieved successfully: ORD100234
+2026-06-17 09:20:45.531 INFO  [REQ-1003] [http-nio-8080-exec-3] com.company.api.OrderAPI - Response Status: 200 OK
+2026-06-17 09:20:45.534 DEBUG [REQ-1003] [http-nio-8080-exec-3] com.company.api.OrderAPI - Response Payload: {"orderId":"ORD100234","status":"SHIPPED","amount":129.50}
+
+2026-06-17 09:25:01.992 WARN  [REQ-1004] [http-nio-8080-exec-4] com.company.security.AuthFilter - Invalid API key received from IP 192.168.1.25
+2026-06-17 09:25:02.001 INFO  [REQ-1004] [http-nio-8080-exec-4] com.company.api.AuthAPI - Response Status: 401 Unauthorized
+
+2026-06-17 09:30:15.667 INFO  [REQ-1005] [scheduler-1] com.company.batch.ReconciliationJob - Reconciliation job started
+2026-06-17 09:30:45.219 INFO  [REQ-1005] [scheduler-1] com.company.batch.ReconciliationJob - Processed 1024 transactions
+2026-06-17 09:30:45.224 INFO  [REQ-1005] [scheduler-1] com.company.batch.ReconciliationJob - Reconciliation job completed successfully in 29557 ms
+
+06-17-2026 09:15:22.104 INFO api-gateway host=apim-prod-01 requestId=REQ-1001 method=POST endpoint=/api/v1/customers status=201 latency=742ms clientId=mobile-app-01
+
+06-17-2026 09:15:22.112 DEBUG customer-service host=svc-customer-01 requestId=REQ-1001 payload={"customerId":"CUST12345","name":"John Doe","email":"[john.doe@example.com](mailto:john.doe@example.com)"}
+
+06-17-2026 09:18:10.223 INFO payment-api host=svc-payment-01 requestId=REQ-1002 transactionId=TXN987654 amount=499.99 currency=USD
+
+06-17-2026 09:18:12.507 ERROR payment-api host=svc-payment-01 requestId=REQ-1002 error="Payment gateway timeout" status=504
+
+06-17-2026 09:20:45.312 INFO order-api host=svc-order-01 requestId=REQ-1003 orderId=ORD100234 status=SHIPPED amount=129.50
+
+06-17-2026 09:25:01.992 WARN auth-service host=auth-01 requestId=REQ-1004 message="Invalid API key" clientIp=192.168.1.25 status=401
+
+06-17-2026 09:30:15.667 INFO reconciliation-job host=batch-01 requestId=REQ-1005 event="Job Started"
+
+06-17-2026 09:30:45.224 INFO reconciliation-job host=batch-01 requestId=REQ-1005 event="Job Completed" processedRecords=1024 duration=29557ms
+
+06-17-2026 09:35:55.871 INFO api-gateway host=apim-prod-02 requestId=REQ-1006 method=GET endpoint=/api/v1/products status=200 latency=83ms
+
+06-17-2026 09:36:11.451 ERROR inventory-service host=svc-inventory-02 requestId=REQ-1007 sku=SKU-789 error="Database connection failed"

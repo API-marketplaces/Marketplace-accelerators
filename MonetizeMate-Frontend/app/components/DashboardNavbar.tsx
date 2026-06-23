@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import UserProfile from './UserProfile'
+import ThemeToggle from './ThemeToggle'
 
 /**
  * DashboardNavbar
@@ -22,8 +23,8 @@ export default function DashboardNavbar() {
     <nav
       style={{
         height: 64,
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(7,15,31,0.96)',
+        borderBottom: '1px solid var(--navbar-border)',
+        background: 'var(--navbar-bg)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         position: 'sticky',
@@ -58,7 +59,7 @@ export default function DashboardNavbar() {
           M
         </div>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
             MonetizeMate
           </div>
           <div style={{ fontSize: 10, color: 'rgba(0,229,192,0.6)', letterSpacing: '0.3px' }}>
@@ -69,8 +70,10 @@ export default function DashboardNavbar() {
 
       {/* ── Right side ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <ThemeToggle />
+
         {/* Divider */}
-        <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.08)' }} />
+        <div style={{ width: 1, height: 32, background: 'var(--navbar-divider)' }} />
 
         {/* Nagarro logo */}
         <img

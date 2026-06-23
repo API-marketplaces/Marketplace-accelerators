@@ -74,6 +74,36 @@ export default function StrategyAdviserPage() {
 
                     <Card
                         className="strategy-option"
+                        onClick={() => router.push('/dashboard/strategy-adviser/ai-chat?fresh=1')}
+                    >
+                        <div className="strategy-option-body">
+                            <span className="strategy-option-icon strategy-option-icon-chat">
+                                <Bot className="w-8 h-8" />
+                            </span>
+                            <h3>AI Chat Advisor</h3>
+                            <p>
+                                Fine-tuned question discovery for conversational monetization recommendations.
+                            </p>
+
+                            <div className="strategy-info">
+                                <h4>Chatbot Discovery</h4>
+                                <ul>
+                                    <li>Natural conversation instead of forms</li>
+                                    <li>Sequential follow-up questions</li>
+                                    <li>Strategy recommendations from dialogue</li>
+                                    <li>Recommendation handoff to implementation</li>
+                                </ul>
+                            </div>
+
+                            <Button className="strategy-option-button">
+                                <Bot className="w-4 h-4 mr-2" />
+                                Chat with AI
+                            </Button>
+                        </div>
+                    </Card>
+
+                    <Card
+                        className="strategy-option strategy-option-wide"
                         onClick={() => setShowIndustryDialog(true)}
                     >
                         <div className="strategy-option-body">
@@ -102,36 +132,6 @@ export default function StrategyAdviserPage() {
                         </div>
                     </Card>
 
-                    <Card
-                        className="strategy-option strategy-chat-option"
-                        onClick={() => router.push('/dashboard/strategy-adviser/ai-chat?fresh=1')}
-                    >
-                        <div className="strategy-option-body">
-                            <span className="strategy-option-icon strategy-option-icon-chat">
-                                <Bot className="w-8 h-8" />
-                            </span>
-                            <h3>AI Chat Advisor</h3>
-                            <p>
-                                Just describe your business naturally. The AI asks smart follow-up questions and recommends strategies conversationally.
-                            </p>
-
-                            <div className="strategy-info">
-                                <h4>Conversational Mode</h4>
-                                <ul>
-                                    <li>No forms, just natural conversation</li>
-                                    <li>AI asks exactly what it needs</li>
-                                    <li>Recommendations emerge from dialogue</li>
-                                    <li>Fastest path to personalized advice</li>
-                                </ul>
-                            </div>
-
-                            <Button className="strategy-option-button">
-                                <Bot className="w-4 h-4 mr-2" />
-                                Chat with AI
-                                <span className="strategy-new-pill">New</span>
-                            </Button>
-                        </div>
-                    </Card>
                 </div>
 
                 <IndustrySelectionDialog
@@ -401,7 +401,11 @@ export default function StrategyAdviserPage() {
 
                 @media (max-width: 1100px) {
                     .strategy-grid {
-                        grid-template-columns: 1fr;
+                        grid-template-columns: repeat(2, minmax(280px, 1fr));
+                    }
+
+                    .strategy-option-wide {
+                        grid-column: 1 / -1;
                     }
 
                     .strategy-option {
@@ -426,6 +430,10 @@ export default function StrategyAdviserPage() {
                     .strategy-header {
                         align-items: flex-start;
                         flex-direction: column;
+                    }
+
+                    .strategy-grid {
+                        grid-template-columns: 1fr;
                     }
                 }
 

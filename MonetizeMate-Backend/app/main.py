@@ -7,6 +7,7 @@ from app.api import dashboard_endpoints
 from app.api import prediction_endpoints
 from app.api import questionnaire_endpoints
 from app.api import concierge_endpoints  
+from app.api import support_endpoints
 from app.database.database import create_tables
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -59,6 +60,7 @@ app.include_router(prediction_endpoints.router, prefix="/api/v1", tags=["Predict
 app.include_router(questionnaire_endpoints.router, prefix="/api/v1", tags=["Questionnaire"])
 app.include_router(monetization_recommendation_endpoints.router, prefix="/api/v1", tags=["Monetization Recommendation"])
 app.include_router(concierge_endpoints.router, prefix="/api/v1", tags=["AI Concierge"])
+app.include_router(support_endpoints.router, prefix="/api/v1", tags=["Support"])
 
 @app.get("/")
 async def root():

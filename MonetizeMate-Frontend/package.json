@@ -52,6 +52,8 @@
     "papaparse": "^5.5.3",
     "react": "19.2.0",
     "react-day-picker": "^10.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.75.0",
     "react-is": "^19.2.6",
@@ -61,19 +63,17 @@
     "swr": "^2.3.6",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4",
+    "typescript": "^5",
     "uuid": "^13.0.0",
     "vaul": "^1.1.2",
     "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^20",
     "@types/papaparse": "^5.5.0",
-    "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.0.1",
-    "typescript": "^5"
+    "eslint-config-next": "16.0.1"
   }
 }

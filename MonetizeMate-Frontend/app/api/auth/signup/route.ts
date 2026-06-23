@@ -1,19 +1,48 @@
 import { NextResponse } from 'next/server'
 
-const API = process.env.FASTAPI_BASE_URL || 'http://localhost:8000'
+const API = process.env.FASTAPI_BASE_URL || process.env.FASTAPI_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const COOKIE = process.env.JWT_COOKIE_NAME || 'session'
 const MAX_AGE = Number(process.env.JWT_COOKIE_MAX_AGE ?? 86400)
+
+async function readBackendError(response: Response, fallback: string) {
+  const contentType = response.headers.get('content-type') || ''
+
+  if (contentType.includes('application/json')) {
+    const body = await response.json().catch(() => ({}))
+    return {
+      body,
+      message: body?.message || body?.detail || fallback,
+    }
+  }
+
+  const text = await response.text().catch(() => '')
+  return {
+    body: { detail: text || fallback },
+    message: text || fallback,
+  }
+}
+
+function authProxyError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+  const isLocalFallback = API.includes('localhost') || API.includes('127.0.0.1')
+
+  return NextResponse.json(
+    {
+      message: isLocalFallback
+        ? 'Auth backend is not configured. Set FASTAPI_BASE_URL or FASTAPI_URL in Azure App Service settings.'
+        : `Could not reach auth backend: ${message}`,
+    },
+    { status: 502 }
+  )
+}
 
 export async function POST(req: Request) {
   try {
     const { email, password, firstName, lastName } = await req.json()
     const normalizedEmail = String(email || '').trim().toLowerCase()
     const normalizedPassword = String(password || '').trim()
-
-    // Combine firstName + lastName into name (backend requires it)
     const name = `${firstName || ''} ${lastName || ''}`.trim() || normalizedEmail
 
-    // Register user
     const registerRes = await fetch(`${API}/api/v1/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -21,12 +50,10 @@ export async function POST(req: Request) {
     })
 
     if (!registerRes.ok) {
-      const err = await registerRes.json().catch(() => ({ detail: 'Signup failed' }))
-      const message = err?.message || err?.detail || 'Signup failed'
-      return NextResponse.json({ ...err, message }, { status: registerRes.status })
+      const { body, message } = await readBackendError(registerRes, 'Signup failed')
+      return NextResponse.json({ ...body, message }, { status: registerRes.status })
     }
 
-    // Auto-login after signup
     const loginRes = await fetch(`${API}/api/v1/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -34,11 +61,13 @@ export async function POST(req: Request) {
     })
 
     if (!loginRes.ok) {
-      return NextResponse.json({ ok: true, message: 'Registered! Please login.' })
+      const { message } = await readBackendError(loginRes, 'Registered! Please login.')
+      return NextResponse.json({ ok: true, message })
     }
 
     const { access_token } = await loginRes.json()
     const res = NextResponse.json({ ok: true })
+
     res.cookies.set({
       name: COOKIE,
       value: access_token,
@@ -48,8 +77,9 @@ export async function POST(req: Request) {
       path: '/',
       maxAge: MAX_AGE,
     })
+
     return res
-  } catch {
-    return NextResponse.json({ message: 'Bad request' }, { status: 400 })
+  } catch (error: unknown) {
+    return authProxyError(error)
   }
 }

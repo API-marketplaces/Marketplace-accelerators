@@ -215,6 +215,7 @@ export default function UserProfile() {
 
       {/* ── Popover content ── */}
       <PopoverContent
+        className="user-profile-popover"
         align="end"
         sideOffset={10}
         style={{

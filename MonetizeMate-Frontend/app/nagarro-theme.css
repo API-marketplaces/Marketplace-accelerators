@@ -12,12 +12,36 @@
   --text-muted: rgba(255, 255, 255, 0.35);
   --border: rgba(0, 229, 192, 0.1);
   --border-hover: rgba(0, 229, 192, 0.35);
+  --app-background: linear-gradient(135deg, #060E1E 0%, #0A1628 40%, #0D2035 70%, #071420 100%);
+  --navbar-bg: rgba(7,15,31,0.96);
+  --navbar-border: rgba(255,255,255,0.06);
+  --navbar-divider: rgba(255,255,255,0.08);
+  --surface-strong: rgba(17, 34, 54, 0.92);
+  --surface-soft: rgba(255, 255, 255, 0.04);
+}
+
+html.light {
+  --bg-primary: #f6f8fb;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --bg-card-hover: rgba(0, 117, 102, 0.07);
+  --text-primary: #102033;
+  --text-secondary: rgba(16, 32, 51, 0.68);
+  --text-muted: rgba(16, 32, 51, 0.44);
+  --border: rgba(14, 116, 104, 0.18);
+  --border-hover: rgba(14, 116, 104, 0.34);
+  --app-background: linear-gradient(135deg, #f7fbff 0%, #eef7f5 48%, #ffffff 100%);
+  --navbar-bg: rgba(255,255,255,0.94);
+  --navbar-border: rgba(13, 55, 72, 0.1);
+  --navbar-divider: rgba(13,55,72,0.12);
+  --surface-strong: rgba(255, 255, 255, 0.94);
+  --surface-soft: rgba(255, 255, 255, 0.86);
 }
 
 /* Override the light theme defaults */
 body {
-  background: linear-gradient(135deg, #060E1E 0%, #0A1628 40%, #0D2035 70%, #071420 100%) !important;
-  color: #ffffff !important;
+  background: var(--app-background) !important;
+  color: var(--text-primary) !important;
   font-family: 'DM Sans', system-ui, sans-serif !important;
   min-height: 100vh;
 }
@@ -27,6 +51,13 @@ body {
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(0, 229, 192, 0.12) !important;
   color: #ffffff !important;
+}
+
+html.light .card,
+html.light [class*="card"] {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(14, 116, 104, 0.18) !important;
+  color: #102033 !important;
 }
 
 /* Buttons — primary */
@@ -48,6 +79,22 @@ button[class*="blue-700"] {
 [class*="text-blue-600"],
 [class*="text-blue-500"] {
   color: #00E5C0 !important;
+}
+
+html.light [class*="text-blue-900"],
+html.light [class*="text-blue-800"],
+html.light [class*="text-blue-700"],
+html.light [class*="text-slate-900"],
+html.light [class*="text-slate-800"],
+html.light [class*="text-slate-700"] {
+  color: #102033 !important;
+}
+
+html.light [class*="text-blue-600"],
+html.light [class*="text-blue-500"],
+html.light [class*="text-teal"],
+html.light [class*="text-emerald"] {
+  color: #087d70 !important;
 }
 
 /* Backgrounds */
@@ -76,8 +123,861 @@ input::placeholder, textarea::placeholder {
   color: rgba(255, 255, 255, 0.35) !important;
 }
 
+html.light input,
+html.light textarea,
+html.light select {
+  background: #ffffff !important;
+  border-color: rgba(13, 55, 72, 0.18) !important;
+  color: #102033 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: rgba(16, 32, 51, 0.4) !important;
+}
+
+.theme-toggle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-hover);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--bg-card-hover);
+}
+
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+html.light .monetize-dashboard,
+html.light .strategy-page,
+html.light .chat-page,
+html.light .analytics-workbench,
+html.light .business-data-page,
+html.light .questionnaire-page {
+  background: var(--app-background) !important;
+  color: #102033 !important;
+}
+
+html.light .dashboard-heading h1,
+html.light .welcome-panel h2,
+html.light .feature-card h2,
+html.light .step-item h3,
+html.light .strategy-title-row h1,
+html.light .strategy-option h3,
+html.light .strategy-info h4,
+html.light .strategy-success h3,
+html.light .chat-title h1,
+html.light .business-data-title h1,
+html.light .questionnaire-title h1,
+html.light h1,
+html.light h2,
+html.light h3,
+html.light h4 {
+  color: #102033 !important;
+}
+
+html.light .dashboard-heading p:not(.dashboard-kicker),
+html.light .welcome-panel > p,
+html.light .step-item p,
+html.light .feature-card p,
+html.light .feature-card,
+html.light .feature-action,
+html.light .feature-eyebrow,
+html.light .info-hint,
+html.light .strategy-title-row p,
+html.light .strategy-option p,
+html.light .strategy-info li,
+html.light .strategy-success p,
+html.light .chat-title p,
+html.light .business-data-title p,
+html.light .questionnaire-title p,
+html.light label,
+html.light p,
+html.light span,
+html.light li {
+  color: rgba(16, 32, 51, 0.68) !important;
+}
+
+html.light .welcome-panel,
+html.light .feature-card,
+html.light .strategy-option,
+html.light .strategy-success,
+html.light .chat-panel,
+html.light .business-data-card,
+html.light .questionnaire-card,
+html.light .upload-card,
+html.light [class*="panel"],
+html.light [class*="option"] {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(14, 116, 104, 0.18) !important;
+  box-shadow: 0 18px 52px rgba(16, 32, 51, 0.1) !important;
+}
+
+html.light .feature-card::before {
+  background:
+    linear-gradient(115deg, rgba(255,255,255,0.65), transparent 34%),
+    linear-gradient(180deg, rgba(14, 116, 104, 0.05), transparent 58%) !important;
+}
+
+html.light .feature-card::after {
+  border-color: rgba(14, 116, 104, 0.1) !important;
+}
+
+html.light .feature-action,
+html.light .feature-eyebrow,
+html.light .info-hint,
+html.light .strategy-option-button,
+html.light .chat-ready-secondary {
+  background: rgba(0, 201, 178, 0.1) !important;
+  border-color: rgba(8, 125, 112, 0.22) !important;
+  color: #087d70 !important;
+}
+
+html.light .feature-action svg,
+html.light .info-hint svg,
+html.light .step-number svg {
+  color: #087d70 !important;
+}
+
+html.light .step-number {
+  color: #062b28 !important;
+}
+
+html.light .dashboard-kicker,
+html.light .strategy-info li::before {
+  color: #087d70 !important;
+}
+
+html.light .chat-bubble,
+html.light .chat-compose input,
+html.light .strategy-info,
+html.light .questionnaire-card,
+html.light .business-data-card {
+  color: #102033 !important;
+}
+
+html.light .chat-row.user .chat-bubble,
+html.light .chat-compose button,
+html.light .chat-ready-primary,
+html.light .strategy-back,
+html.light .strategy-option-button:hover {
+  color: #062b28 !important;
+}
+
+html.light .info-tooltip {
+  background: #ffffff !important;
+  color: #102033 !important;
+  border-color: rgba(14, 116, 104, 0.24) !important;
+}
+
+html.light .info-tooltip p {
+  color: #102033 !important;
+}
+
+/* Dashboard tool pages with page-local dark styles */
+html.light .workbench-page,
+html.light .upload-page,
+html.light .analytics-legacy-page,
+html.light .api-stats-page,
+html.light .prediction-page {
+  background: var(--app-background) !important;
+  color: #102033 !important;
+}
+
+html.light .workbench-page .workbench-content,
+html.light .upload-page > div:not(.global-help),
+html.light .analytics-legacy-page > main,
+html.light .api-stats-page > div,
+html.light .prediction-page > div {
+  color: #102033 !important;
+}
+
+html.light .workbench-page .workbench-heading h1,
+html.light .workbench-page .workbench-card h2,
+html.light .upload-page h1,
+html.light .analytics-legacy-page h1,
+html.light .api-stats-page h1,
+html.light .prediction-page h1,
+html.light .prediction-page h2,
+html.light .prediction-page h3,
+html.light .prediction-page h4,
+html.light .prediction-page .card-title,
+html.light .prediction-page [class*="text-white"] {
+  color: #102033 !important;
+}
+
+html.light .workbench-page .workbench-heading p,
+html.light .workbench-page .workbench-card p,
+html.light .workbench-page .workbench-eyebrow,
+html.light .workbench-page .workbench-action,
+html.light .upload-page [style],
+html.light .analytics-legacy-page [style],
+html.light .api-stats-page [style],
+html.light .prediction-page p,
+html.light .prediction-page span,
+html.light .prediction-page td,
+html.light .prediction-page th,
+html.light .prediction-page [class*="text-emerald"],
+html.light .prediction-page [class*="text-white"] {
+  color: #344050 !important;
+}
+
+html.light .workbench-page .back-link,
+html.light .workbench-page .workbench-heading p,
+html.light .upload-page a,
+html.light .analytics-legacy-page [style*="#00E5C0"],
+html.light .api-stats-page [style*="#00E5C0"],
+html.light .prediction-page [class*="text-[#00E5C0]"],
+html.light .prediction-page [class*="text-teal"],
+html.light .prediction-page [class*="text-emerald"] {
+  color: #087d70 !important;
+}
+
+html.light .workbench-page .workbench-card,
+html.light .upload-page [style*="rgba(255,255,255,0.03)"],
+html.light .upload-page [style*="rgba(255,255,255,0.02)"],
+html.light .upload-page [style*="rgba(255,255,255,0.05)"],
+html.light .upload-page [style*="#0E1929"],
+html.light .analytics-legacy-page [style*="rgba(255,255,255,0.025)"],
+html.light .analytics-legacy-page [style*="rgba(255,255,255,0.04)"],
+html.light .api-stats-page [style*="linear-gradient(135deg, rgba(20, 184, 166"],
+html.light .prediction-page .bg-\[\#102235\]\/95,
+html.light .prediction-page .bg-\[\#183247\]\/85,
+html.light .prediction-page .bg-\[\#183247\]\/70,
+html.light .prediction-page .bg-\[\#183247\]\/65,
+html.light .prediction-page [class*="bg-[#102235]"],
+html.light .prediction-page [class*="bg-[#183247]"] {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(14, 116, 104, 0.18) !important;
+  box-shadow: 0 18px 52px rgba(16, 32, 51, 0.1) !important;
+}
+
+html.light .upload-page nav,
+html.light .analytics-legacy-page header {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(13, 55, 72, 0.1) !important;
+}
+
+html.light .upload-page nav [style],
+html.light .analytics-legacy-page header [style] {
+  color: #102033 !important;
+}
+
+html.light .upload-page button,
+html.light .analytics-legacy-page button,
+html.light .api-stats-page button,
+html.light .prediction-page button {
+  border-color: rgba(8, 125, 112, 0.28) !important;
+}
+
+html.light .upload-page button[style*="linear-gradient"],
+html.light .analytics-legacy-page button[style*="linear-gradient"],
+html.light .api-stats-page button[style*="linear-gradient"],
+html.light .prediction-page button[style*="linear-gradient"],
+html.light .prediction-page .bg-\[\#00E5C0\] {
+  background: linear-gradient(135deg, #00E5C0, #1ABFA3) !important;
+  color: #062b28 !important;
+}
+
+html.light .upload-page [style*="rgba(255,255,255,0.1)"],
+html.light .analytics-legacy-page [style*="rgba(255,255,255,0.05)"],
+html.light .api-stats-page [style*="rgba(255,255,255,0.05)"],
+html.light .prediction-page .bg-\[\#071527\],
+html.light .prediction-page [class*="bg-[#071527]"] {
+  background: rgba(14, 116, 104, 0.08) !important;
+  border-color: rgba(14, 116, 104, 0.18) !important;
+}
+
+html.light .api-stats-page .recharts-cartesian-axis-tick-value,
+html.light .api-stats-page .recharts-legend-item-text,
+html.light .prediction-page .recharts-cartesian-axis-tick-value,
+html.light .prediction-page .recharts-legend-item-text {
+  fill: #344050 !important;
+  color: #344050 !important;
+}
+
+html.light .api-stats-page .recharts-cartesian-grid line,
+html.light .prediction-page .recharts-cartesian-grid line {
+  stroke: rgba(13, 55, 72, 0.14) !important;
+}
+
+html.light .api-stats-page .recharts-tooltip-wrapper,
+html.light .prediction-page .recharts-tooltip-wrapper {
+  color: #102033 !important;
+}
+
+html.light .api-stats-page [data-state="active"],
+html.light .analytics-legacy-page [data-state="active"] {
+  background: rgba(0, 201, 178, 0.14) !important;
+  color: #087d70 !important;
+  border-bottom-color: #00E5C0 !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #060E1E; }
 ::-webkit-scrollbar-thumb { background: rgba(0, 229, 192, 0.3); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0, 229, 192, 0.6); }
+
+.global-help {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.global-help-button {
+  min-width: 112px;
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-gradient) !important;
+  color: #061421 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 24px;
+  box-shadow: 0 18px 42px rgba(0, 229, 192, 0.22);
+  cursor: pointer;
+}
+
+.global-help-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.global-help-button span {
+  font-size: 15px;
+  font-weight: 800;
+  color: #061421 !important;
+}
+
+.global-help-panel {
+  width: min(360px, calc(100vw - 28px));
+  height: min(560px, calc(100vh - 112px));
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 229, 192, 0.2);
+  background: #0d1b2e;
+  color: #f8fafc;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(0, 229, 192, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+.global-help-header {
+  min-height: 48px;
+  background:
+    linear-gradient(135deg, rgba(0, 229, 192, 0.16), rgba(26, 191, 163, 0.08)),
+    #081827;
+  color: #ffffff;
+  display: grid;
+  grid-template-columns: 82px 1fr 44px;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 229, 192, 0.16);
+}
+
+.global-help-tab,
+.global-help-minimize {
+  height: 48px;
+  border: 0;
+  background: transparent !important;
+  color: rgba(236, 253, 245, 0.72) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.global-help-tab {
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.global-help-tab.active {
+  color: #00E5C0 !important;
+}
+
+.global-help-tab svg,
+.global-help-minimize svg {
+  width: 16px;
+  height: 16px;
+}
+
+.global-help-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #0d1b2e;
+}
+
+.global-help-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.global-help-row.user {
+  justify-content: flex-end;
+}
+
+.global-help-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(0, 229, 192, 0.1);
+  color: #00E5C0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.global-help-avatar svg {
+  width: 14px;
+  height: 14px;
+}
+
+.global-help-bubble {
+  max-width: 86%;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #f8fafc;
+  border: 1px solid rgba(0, 229, 192, 0.16);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.global-help-row.user .global-help-bubble {
+  background: linear-gradient(135deg, #00E5C0, #1ABFA3);
+  color: #061421;
+  border-color: rgba(0, 229, 192, 0.36);
+}
+
+.global-help-bubble.muted {
+  color: rgba(248, 250, 252, 0.62);
+}
+
+.help-message-line {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.global-help-link {
+  margin-top: 9px;
+  border: 0;
+  background: transparent !important;
+  color: #00E5C0 !important;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.global-help-suggestions {
+  display: grid;
+  gap: 8px;
+  padding: 0 16px 12px;
+  background: #0d1b2e;
+}
+
+.global-help-suggestions button {
+  text-align: left;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 229, 192, 0.16);
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(248, 250, 252, 0.86) !important;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.global-help-compose {
+  display: grid;
+  grid-template-columns: 1fr 42px;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0d1b2e;
+}
+
+.global-help-compose input {
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 229, 192, 0.28) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
+  color: #ffffff !important;
+  padding: 0 11px;
+  min-width: 0;
+}
+
+.global-help-compose button {
+  width: 42px;
+  height: 40px;
+  border-radius: 8px;
+  border: 0;
+  background: var(--accent-gradient) !important;
+  color: #061421 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.global-help-compose button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.global-help-compose svg {
+  width: 17px;
+  height: 17px;
+}
+
+.global-help-support {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #0d1b2e;
+}
+
+.global-help-support label {
+  display: grid;
+  gap: 7px;
+  color: rgba(248, 250, 252, 0.88);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.global-help-support input,
+.global-help-support select,
+.global-help-support textarea {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 229, 192, 0.24) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+}
+
+.global-help-support select {
+  color-scheme: dark;
+}
+
+.global-help-support option {
+  background: #0d1b2e;
+  color: #ffffff;
+}
+
+.global-help-support textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.global-help-upload {
+  min-height: 54px;
+  border: 1px dashed rgba(0, 229, 192, 0.32);
+  border-radius: 6px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px !important;
+  color: rgba(248, 250, 252, 0.62) !important;
+  cursor: pointer;
+}
+
+.global-help-upload svg {
+  width: 16px;
+  height: 16px;
+  color: #00E5C0;
+}
+
+.global-help-upload input {
+  display: none;
+}
+
+.global-help-status {
+  margin: 0;
+  color: #00E5C0;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.global-help-footer {
+  margin: auto -18px -12px;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: rgba(248, 250, 252, 0.62);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.global-help-footer button {
+  min-width: 64px;
+  height: 38px;
+  border-radius: 4px;
+  border: 0;
+  background: var(--accent-gradient) !important;
+  color: #061421 !important;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.global-help-footer button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+html.light .global-help-panel,
+html.light .global-help-panel p,
+html.light .global-help-panel span,
+html.light .global-help-panel label {
+  color: #26313d !important;
+}
+
+html.light .global-help-panel,
+html.light .global-help-messages,
+html.light .global-help-suggestions,
+html.light .global-help-compose,
+html.light .global-help-support {
+  background: #ffffff !important;
+}
+
+html.light .global-help-panel {
+  border-color: rgba(14, 116, 104, 0.18) !important;
+  box-shadow: 0 24px 70px rgba(16, 32, 51, 0.18) !important;
+}
+
+html.light .global-help-header {
+  background:
+    linear-gradient(135deg, rgba(0, 229, 192, 0.16), rgba(26, 191, 163, 0.08)),
+    #ffffff !important;
+  border-bottom-color: rgba(14, 116, 104, 0.16) !important;
+}
+
+html.light .global-help-bubble {
+  background: #f3f5f7 !important;
+  color: #26313d !important;
+  border-color: rgba(14, 116, 104, 0.16) !important;
+}
+
+html.light .global-help-row.user .global-help-bubble {
+  background: var(--accent-gradient) !important;
+  color: #061421 !important;
+}
+
+html.light .global-help-avatar {
+  background: rgba(36, 20, 86, 0.08) !important;
+  color: #241456 !important;
+}
+
+html.light .global-help-compose {
+  border-top-color: #e7eaf0 !important;
+}
+
+html.light .global-help-compose input,
+html.light .global-help-support input,
+html.light .global-help-support select,
+html.light .global-help-support textarea {
+  background: #ffffff !important;
+  border-color: #d1d7df !important;
+  color: #26313d !important;
+}
+
+html.light .global-help-support select {
+  color-scheme: light;
+}
+
+html.light .global-help-support option {
+  background: #ffffff;
+  color: #26313d;
+}
+
+html.light .global-help-suggestions button {
+  background: #ffffff !important;
+  border-color: #e1e5ea !important;
+  color: #344050 !important;
+}
+
+html.light .global-help-upload {
+  border-color: #c9d1dc !important;
+  color: #7b8491 !important;
+}
+
+html.light .global-help-button,
+html.light .global-help-button span,
+html.light .global-help-button svg,
+html.light .global-help-compose button,
+html.light .global-help-footer button {
+  color: #061421 !important;
+}
+
+html.light .global-help-tab,
+html.light .global-help-tab span,
+html.light .global-help-minimize {
+  color: rgba(16, 32, 51, 0.68) !important;
+}
+
+html.light .global-help-tab.active {
+  color: #087d70 !important;
+}
+
+html.light .global-help-link,
+html.light .global-help-status,
+html.light .global-help-upload svg {
+  color: #087d70 !important;
+}
+
+/* Questionnaire industry modal */
+html.light .industry-dialog {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(0, 201, 178, 0.1), transparent 34%),
+    #ffffff !important;
+  color: #102033 !important;
+  border-color: rgba(14, 116, 104, 0.22) !important;
+  box-shadow: 0 28px 80px rgba(16, 32, 51, 0.2) !important;
+}
+
+html.light .industry-dialog-title,
+html.light .industry-dialog-field label {
+  color: #102033 !important;
+}
+
+html.light .industry-select-trigger,
+html.light .industry-other-input {
+  background: #ffffff !important;
+  color: #102033 !important;
+  border-color: rgba(14, 116, 104, 0.28) !important;
+}
+
+html.light .industry-other-input::placeholder {
+  color: rgba(16, 32, 51, 0.42) !important;
+}
+
+html.light .industry-dialog-error {
+  color: #b91c1c !important;
+}
+
+/* User profile popover */
+html.light .user-profile-popover {
+  background: #ffffff !important;
+  color: #102033 !important;
+  border-color: rgba(14, 116, 104, 0.18) !important;
+  box-shadow: 0 20px 60px rgba(16, 32, 51, 0.16) !important;
+}
+
+html.light .user-profile-popover p,
+html.light .user-profile-popover span {
+  color: #102033 !important;
+}
+
+html.light .user-profile-popover [style*="rgba(255,255,255,0.45)"],
+html.light .user-profile-popover [style*="rgba(255,255,255,0.4)"],
+html.light .user-profile-popover [style*="rgba(255,255,255,0.35)"],
+html.light .user-profile-popover [style*="rgba(255,255,255,0.3)"] {
+  color: rgba(16, 32, 51, 0.58) !important;
+}
+
+html.light .user-profile-popover [style*="rgba(255,255,255,0.06)"] {
+  background: rgba(13, 55, 72, 0.1) !important;
+}
+
+/* Login/start page theme */
+.signin-theme-toggle {
+  position: fixed;
+  top: 22px;
+  right: 24px;
+  z-index: 90;
+}
+
+html.light .signin-shell {
+  background: var(--app-background) !important;
+  color: #102033 !important;
+}
+
+html.light .signin-shell::before {
+  background:
+    linear-gradient(rgba(14, 116, 104, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 116, 104, 0.05) 1px, transparent 1px) !important;
+}
+
+html.light .brand-row p,
+html.light .signin-copy h1,
+html.light .preview-item h2,
+html.light .card-heading h2,
+html.light .field-group label {
+  color: #102033 !important;
+}
+
+html.light .signin-summary,
+html.light .preview-item p,
+html.light .card-heading p,
+html.light .form-row label,
+html.light .signup-link,
+html.light .reset-link-note {
+  color: rgba(16, 32, 51, 0.68) !important;
+}
+
+html.light .signin-card,
+html.light .preview-item {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(14, 116, 104, 0.18) !important;
+  box-shadow: 0 24px 70px rgba(16, 32, 51, 0.12) !important;
+}
+
+html.light .input-wrap input {
+  background: #ffffff !important;
+  color: #102033 !important;
+  border-color: rgba(14, 116, 104, 0.22) !important;
+}
+
+@media (max-width: 560px) {
+  .global-help {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .global-help-panel {
+    width: calc(100vw - 28px);
+    height: min(560px, calc(100vh - 92px));
+  }
+}

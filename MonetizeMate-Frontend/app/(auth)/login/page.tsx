@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, type FormEvent, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Alert, AlertDescription } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
 import { Card } from '../../components/ui/card'
@@ -20,6 +20,7 @@ import {
   Mail,
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import ThemeToggle from '../../components/ThemeToggle'
 
 const FEATURE_PREVIEW = [
   {
@@ -39,21 +40,9 @@ const FEATURE_PREVIEW = [
   },
 ]
 
-function getInitialResetParams() {
-  if (typeof window === 'undefined') {
-    return { email: '', token: '' }
-  }
-
-  const params = new URLSearchParams(window.location.search)
-  return {
-    email: (params.get('email') || '').trim().toLowerCase(),
-    token: params.get('resetToken') || '',
-  }
-}
-
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
-  const [initialResetParams] = useState(getInitialResetParams)
+  const searchParams = useSearchParams()
   const {
     login,
     loggingIn,
@@ -62,14 +51,18 @@ export default function LoginPage() {
     resetPassword,
     resettingPassword,
   } = useAuth()
-  const [mode, setMode] = useState<'login' | 'reset'>(initialResetParams.token ? 'reset' : 'login')
+
+  const tokenParam = searchParams.get('resetToken') || ''
+  const emailParam = (searchParams.get('email') || '').trim().toLowerCase()
+
+  const [mode, setMode] = useState<'login' | 'reset'>(tokenParam ? 'reset' : 'login')
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [resetEmail, setResetEmail] = useState(initialResetParams.email)
+  const [resetEmail, setResetEmail] = useState(emailParam)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [resetToken, setResetToken] = useState(initialResetParams.token)
+  const [resetToken, setResetToken] = useState(tokenParam)
   const [resetLinkSent, setResetLinkSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -81,8 +74,7 @@ export default function LoginPage() {
 
     try {
       await login({ email: email.trim().toLowerCase(), password: password.trim() })
-      const params = new URLSearchParams(window.location.search)
-      const redirectTo = params.get('redirectTo') || '/dashboard'
+      const redirectTo = searchParams.get('redirectTo') || '/dashboard'
       router.push(redirectTo)
       router.refresh()
     } catch (err: unknown) {
@@ -151,6 +143,9 @@ export default function LoginPage() {
 
   return (
     <main className="signin-shell">
+      <div className="signin-theme-toggle">
+        <ThemeToggle />
+      </div>
       <section className={`signin-layout ${mode === 'reset' ? 'reset-layout' : ''}`}>
         {mode === 'login' && (
           <div className="signin-copy">
@@ -740,5 +735,19 @@ export default function LoginPage() {
         }
       `}</style>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="signin-shell">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 112px)' }}>
+          <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '18px' }}>Loading...</p>
+        </div>
+      </main>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

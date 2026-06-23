@@ -153,7 +153,7 @@ function UploadPageInner() {
   const selectedFile = uploadedFiles.find(file => file.id === selectedFileId) || null
 
   return (
-    <div style={{ minHeight: '100vh', background: '#070F1F', fontFamily: "'DM Sans', system-ui, sans-serif", color: '#fff' }}>
+    <div className="upload-page" style={{ minHeight: '100vh', background: '#070F1F', fontFamily: "'DM Sans', system-ui, sans-serif", color: '#fff' }}>
 
       {/* ── NAVBAR ── */}
       <nav style={{ height: '64px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(7,15,31,0.95)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px' }}>

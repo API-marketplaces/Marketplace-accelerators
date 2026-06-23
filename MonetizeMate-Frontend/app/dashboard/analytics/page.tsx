@@ -285,7 +285,7 @@ function AnalyticsPageInner() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #060E1E 0%, #0A1628 50%, #071420 100%)', fontFamily: "'DM Sans', system-ui, sans-serif", color: '#fff' }}>
+    <div className="analytics-legacy-page" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #060E1E 0%, #0A1628 50%, #071420 100%)', fontFamily: "'DM Sans', system-ui, sans-serif", color: '#fff' }}>
       <header style={{ position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid rgba(0,229,192,0.08)', background: 'rgba(6,14,30,0.9)', backdropFilter: 'blur(20px)', padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '60px' }}>
         <div onClick={() => router.push('/')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #00E5C0, #1ABFA3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '800', color: '#060E1E' }}>M</div>
@@ -402,7 +402,7 @@ function AnalyticsPageInner() {
 export default function AnalyticsPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: '100vh', background: '#060E1E', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5C0', fontFamily: 'system-ui', fontSize: '16px' }}>
+      <div className="analytics-legacy-page" style={{ minHeight: '100vh', background: '#060E1E', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5C0', fontFamily: 'system-ui', fontSize: '16px' }}>
         Loading…
       </div>
     }>

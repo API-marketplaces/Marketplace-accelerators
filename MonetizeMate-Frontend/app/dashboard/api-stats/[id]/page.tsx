@@ -1,9 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Button } from "../../../components/ui/button";
-import { Card } from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 import { ArrowLeft, BarChart3, AlertTriangle, Users, Globe, Building, Clock, Activity, Target, CheckCircle, Calendar, UserCheck, Briefcase, Timer } from "lucide-react";
@@ -16,7 +13,6 @@ import {
   useDistributionAnalysis,
   useRankingsAnalysis,
 } from "@/app/hooks/useAnalytics";
-import ConciergeBubble from "../../../components/ConciergeBubble";
 
 const fmt = (val: unknown) => (val != null ? Number(val).toLocaleString("en-US") : "0");
 
@@ -106,7 +102,7 @@ export default function ApiStatsPage() {
   ];
 
   return (
-    <div className="min-h-screen p-6 md:p-8" style={{ background: "transparent" }}>
+    <div className="api-stats-page min-h-screen p-6 md:p-8" style={{ background: "transparent" }}>
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* ── Header ── */}
@@ -439,7 +435,6 @@ export default function ApiStatsPage() {
         </div>
       </div>
 
-      <ConciergeBubble fileId={selectedFileId} />
     </div>
   );
 }
