@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import DashboardNavbar from '../components/DashboardNavbar'
-import { ArrowRight, BarChart3, CheckCircle2, Compass, Info } from 'lucide-react'
+import { ArrowRight, BarChart3, CheckCircle2, Compass, Info, PlugZap } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip'
 import type { LucideIcon } from 'lucide-react'
 
@@ -34,6 +34,15 @@ const FEATURES: DashboardFeature[] = [
     action: 'Open workbench',
     eyebrow: 'Analytics + Forecasting',
     icon: BarChart3,
+  },
+  {
+    title: 'AI Monetization Plugin',
+    description: 'Connect API gateways, import APIs, and prepare them for monetization workflows.',
+    tooltip: 'Manage gateway sources such as Apigee Edge, Azure API Management, and Kong, then import APIs for future monetization productization.',
+    href: '/dashboard/ai-monetization-plugin',
+    action: 'Manage sources',
+    eyebrow: 'API Gateway',
+    icon: PlugZap,
   },
 ]
 
@@ -174,7 +183,7 @@ export default function DashboardPage() {
 
         .feature-grid {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 26px;
           margin-bottom: 0;
         }
@@ -182,7 +191,7 @@ export default function DashboardPage() {
         .feature-card {
           position: relative;
           display: flex;
-          min-height: 362px;
+          min-height: 330px;
           color: inherit;
           text-decoration: none;
           border-radius: 20px;
@@ -234,10 +243,10 @@ export default function DashboardPage() {
           position: relative;
           z-index: 1;
           flex: 1;
-          min-height: 362px;
+          min-height: 330px;
           height: 100%;
           box-sizing: border-box;
-          padding: 34px 34px 33px;
+          padding: 30px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -361,7 +370,7 @@ export default function DashboardPage() {
           align-items: center;
           justify-content: space-between;
           width: fit-content;
-          min-width: 196px;
+          min-width: 168px;
           gap: 12px;
           padding: 10px 12px 10px 16px;
           border-radius: 999px;
@@ -468,6 +477,12 @@ export default function DashboardPage() {
           color: rgba(255, 255, 255, 0.52);
           font-size: 13px;
           line-height: 1.55;
+        }
+
+        @media (max-width: 1180px) {
+          .feature-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
         }
 
         @media (max-width: 900px) {
