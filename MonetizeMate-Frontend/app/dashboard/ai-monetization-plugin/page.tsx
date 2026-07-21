@@ -112,14 +112,6 @@ const EMPTY_FORM: FormState = {
   adminApiKey: '',
 }
 
-const AZURE_DEMO_FORM: Pick<FormState, 'connectionName' | 'serviceName' | 'resourceGroup' | 'subscriptionId' | 'gatewayUrl'> = {
-  connectionName: 'Azure Demo',
-  serviceName: 'MonetizeMateResource',
-  resourceGroup: 'RG-MonetizeMate',
-  subscriptionId: '320d4188-13cb-4626-9239-f8f6b91db973',
-  gatewayUrl: 'https://monetizemateresource.azure-api.net',
-}
-
 const SAMPLE_APIS: ApiRecord[] = [
   { id: 'abc1', status: 'New', name: 'Abc1', apiId: 'abc1', version: 'v0' },
   { id: 'abc1-v2', status: 'New', name: 'Abc1', apiId: 'abc1-v2', version: 'v2' },
@@ -171,7 +163,7 @@ export default function AiMonetizationPluginPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [testState, setTestState] = useState<TestState>('idle')
   const [testMessage, setTestMessage] = useState('')
-  const [connections, setConnections] = useState<GatewayConnection[]>(getStoredConnections)
+  const [connections, setConnections] = useState<GatewayConnection[]>([])
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [selectedApis, setSelectedApis] = useState<string[]>([])
@@ -186,9 +178,33 @@ export default function AiMonetizationPluginPage() {
     }
   }, [authenticated, loading, router])
 
+  const fetchConnections = async () => {
+    try {
+      const response = await fetch('/api/api-sources')
+      if (response.ok) {
+        const data = await response.json()
+        if (Array.isArray(data)) {
+          const formatted = data.map((item: any) => ({
+            id: String(item.id),
+            provider: item.provider,
+            name: item.name,
+            description: item.description,
+            status: item.status || 'connected',
+            createdAt: item.created_at,
+          }))
+          setConnections(formatted)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load connections:', error)
+    }
+  }
+
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(connections))
-  }, [connections])
+    if (authenticated) {
+      fetchConnections()
+    }
+  }, [authenticated])
 
   const activeConnection = connections.find((connection) => connection.id === activeConnectionId) || connections[0]
 
@@ -217,7 +233,6 @@ export default function AiMonetizationPluginPage() {
     setSelectedProvider(provider)
     setForm({
       ...EMPTY_FORM,
-      ...(provider === 'azure' ? AZURE_DEMO_FORM : {}),
       workspace: provider === 'kong' ? 'default' : '',
     })
     setTestState('idle')
@@ -294,29 +309,52 @@ export default function AiMonetizationPluginPage() {
     }, 650)
   }
 
-  const saveConnection = () => {
+  const saveConnection = async () => {
     if (testState !== 'success') {
       setTestState('failed')
       setTestMessage('Test connection successfully before saving.')
       return
     }
 
-    const now = new Date().toISOString()
-    const connection: GatewayConnection = {
-      id: `${selectedProvider}-${Date.now()}`,
-      provider: selectedProvider,
-      name: form.connectionName.trim(),
-      description: form.description.trim(),
-      status: 'connected',
-      createdAt: now,
-    }
+    try {
+      const response = await fetch('/api/api-sources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: selectedProvider,
+          name: form.connectionName.trim(),
+          description: form.description.trim(),
+        }),
+      })
 
-    setConnections((current) => [connection, ...current])
-    setActiveConnectionId(connection.id)
-    setForm(EMPTY_FORM)
-    setTestState('idle')
-    setTestMessage(`${connection.name} saved and connected.`)
-    setView('sources')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        setTestState('failed')
+        setTestMessage(errorData.message || 'Failed to save connection.')
+        return
+      }
+
+      const savedConnection = await response.json()
+      
+      const formattedConnection: GatewayConnection = {
+        id: String(savedConnection.id),
+        provider: savedConnection.provider,
+        name: savedConnection.name,
+        description: savedConnection.description,
+        status: 'connected',
+        createdAt: savedConnection.created_at || new Date().toISOString(),
+      }
+
+      setConnections((current) => [formattedConnection, ...current])
+      setActiveConnectionId(formattedConnection.id)
+      setForm(EMPTY_FORM)
+      setTestState('idle')
+      setTestMessage(`${formattedConnection.name} saved and connected.`)
+      setView('sources')
+    } catch {
+      setTestState('failed')
+      setTestMessage('Failed to connect to the server to save the connection.')
+    }
   }
 
   const openImport = (connectionId: string) => {

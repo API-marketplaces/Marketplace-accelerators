@@ -14,6 +14,7 @@ type DashboardFeature = {
   action: string
   eyebrow: string
   icon: LucideIcon
+  comingSoon?: boolean
 }
 
 const FEATURES: DashboardFeature[] = [
@@ -28,42 +29,32 @@ const FEATURES: DashboardFeature[] = [
   },
   {
     title: 'Analytics Workbench',
-    description: 'Analyze API performance, usage patterns, forecasts, and growth signals in one workspace.',
-    tooltip: 'Open API Statistics or Prediction Models so you can inspect uploaded data, review operational trends, and run forecasting or anomaly analysis.',
+    description: 'Explore API usage, performance patterns, customer behavior, and operational insights.',
+    tooltip: 'This workspace will return with API logs, usage trends, endpoint rankings, distribution views, and client-level analytics.',
     href: '/dashboard/analytics-workbench',
-    action: 'Open workbench',
-    eyebrow: 'Analytics + Forecasting',
+    action: 'Coming soon',
+    eyebrow: 'Analytics',
     icon: BarChart3,
+    comingSoon: true,
   },
   {
     title: 'AI Monetization Plugin',
-    description: 'Connect API gateways, import APIs, and prepare them for monetization workflows.',
-    tooltip: 'Manage gateway sources such as Apigee Edge, Azure API Management, and Kong, then import APIs for future monetization productization.',
+    description: 'Connect API gateways and prepare monetization controls for pricing, policies, and packaging.',
+    tooltip: 'This plugin workflow will return with gateway connections, policy setup, provider validation, and deployment guidance.',
     href: '/dashboard/ai-monetization-plugin',
-    action: 'Manage sources',
-    eyebrow: 'API Gateway',
+    action: 'Coming soon',
+    eyebrow: 'Plugin',
     icon: PlugZap,
+    comingSoon: true,
   },
 ]
 
-const STEPS = [
-  {
-    label: 'Get Strategy Recommendations',
-    text: 'Answer questions about your business to receive personalized monetization strategies.',
-    tooltip: 'Best first step when you are deciding between freemium, tiered, pay-per-use, or hybrid pricing.',
-  },
-  {
-    label: 'Analyze Performance',
-    text: 'Monitor your API statistics and understand usage patterns.',
-    tooltip: 'Use this widget after uploading API logs to validate where usage, client demand, and operational load are concentrated.',
-  },
-  {
-    label: 'Predict Growth',
-    text: 'Forecast revenue and optimize your strategy with AI models.',
-    tooltip: 'Use predictions once historical usage exists, so model output can guide capacity, pricing, and retention decisions.',
-  },
-]
-
+const STEPS = FEATURES.map((feature) => ({
+  label: feature.title === 'Monetization Strategy Advisor' ? 'Get Strategy Recommendations' : feature.title,
+  text: feature.description,
+  tooltip: feature.tooltip,
+  comingSoon: feature.comingSoon,
+}))
 export default function DashboardPage() {
   return (
     <main className="monetize-dashboard">
@@ -73,17 +64,18 @@ export default function DashboardPage() {
         <section className="welcome-panel" aria-labelledby="welcome-title">
           <h2 id="welcome-title">Welcome to MonetizeMate</h2>
           <p>
-            Start with the Monetization Strategy Advisor, then use analytics and prediction tools
-            to optimize and track your revenue growth.
+            Start with the Monetization Strategy Advisor to define your API monetization direction
+            and generate a focused recommendation report.
           </p>
 
           <div className="steps-grid">
             {STEPS.map((step, index) => (
-              <div key={step.label} className="step-item">
+              <div key={step.label} className={`step-item ${step.comingSoon ? 'step-item-disabled' : ''}`.trim()}>
                 <div className="step-number">
                   <span>{index + 1}</span>
                   <CheckCircle2 aria-hidden="true" />
                 </div>
+                {step.comingSoon && <span className="step-coming-soon">Coming Soon</span>}
                 <h3>{step.label}</h3>
                 <InfoHint text={step.tooltip} />
                 <p>{step.text}</p>
@@ -103,6 +95,40 @@ export default function DashboardPage() {
         <div className="feature-grid" aria-label="MonetizeMate dashboard features">
           {FEATURES.map((feature) => {
             const Icon = feature.icon
+            const cardContent = (
+              <div className="feature-card-inner">
+                {feature.comingSoon && <span className="coming-soon-badge">Coming Soon</span>}
+                <div className="feature-top">
+                  <div className="feature-icon">
+                    <Icon aria-hidden="true" />
+                  </div>
+                  <div className="feature-meta">
+                    <span className="feature-eyebrow">{feature.eyebrow}</span>
+                    <InfoHint text={feature.tooltip} />
+                  </div>
+                </div>
+                <div>
+                  <h2>{feature.title}</h2>
+                  <p>{feature.description}</p>
+                </div>
+                <span className="feature-action">
+                  {feature.action}
+                  {!feature.comingSoon && <ArrowRight aria-hidden="true" />}
+                </span>
+              </div>
+            )
+
+            if (feature.comingSoon) {
+              return (
+                <div
+                  key={feature.title}
+                  className="feature-card feature-card-disabled"
+                  aria-disabled="true"
+                >
+                  {cardContent}
+                </div>
+              )
+            }
 
             return (
               <Link
@@ -110,25 +136,7 @@ export default function DashboardPage() {
                 href={feature.href}
                 className="feature-card"
               >
-                <div className="feature-card-inner">
-                  <div className="feature-top">
-                    <div className="feature-icon">
-                      <Icon aria-hidden="true" />
-                    </div>
-                    <div className="feature-meta">
-                      <span className="feature-eyebrow">{feature.eyebrow}</span>
-                      <InfoHint text={feature.tooltip} />
-                    </div>
-                  </div>
-                  <div>
-                    <h2>{feature.title}</h2>
-                    <p>{feature.description}</p>
-                  </div>
-                  <span className="feature-action">
-                    {feature.action}
-                    <ArrowRight aria-hidden="true" />
-                  </span>
-                </div>
+                {cardContent}
               </Link>
             )
           })}
@@ -239,6 +247,22 @@ export default function DashboardPage() {
             inset 0 -80px 90px rgba(3, 30, 24, 0.2);
         }
 
+        .feature-card-disabled {
+          cursor: not-allowed;
+          opacity: 0.72;
+          filter: saturate(0.82);
+        }
+
+        .feature-card-disabled:hover {
+          transform: none;
+          border-color: rgba(103, 188, 178, 0.48);
+          box-shadow:
+            0 22px 68px rgba(0, 0, 0, 0.28),
+            0 0 0 1px rgba(0, 229, 192, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.13),
+            inset 0 -86px 100px rgba(4, 24, 35, 0.24);
+        }
+
         .feature-card-inner {
           position: relative;
           z-index: 1;
@@ -251,6 +275,25 @@ export default function DashboardPage() {
           flex-direction: column;
           justify-content: space-between;
           gap: 24px;
+        }
+
+        .coming-soon-badge {
+          position: absolute;
+          top: 18px;
+          right: 18px;
+          z-index: 2;
+          min-height: 28px;
+          display: inline-flex;
+          align-items: center;
+          padding: 5px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(251, 191, 36, 0.48);
+          background: rgba(251, 191, 36, 0.16);
+          color: #fde68a;
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
         }
 
         .feature-top {
@@ -479,18 +522,13 @@ export default function DashboardPage() {
           line-height: 1.55;
         }
 
-        @media (max-width: 1180px) {
-          .feature-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-        }
+        @media (max-width: 1180px) { }
 
         @media (max-width: 900px) {
           .feature-grid,
           .steps-grid {
             grid-template-columns: 1fr;
           }
-
           .feature-card,
           .feature-card-inner {
             min-height: 260px;
@@ -510,7 +548,6 @@ export default function DashboardPage() {
           .dashboard-heading h1 {
             font-size: 28px;
           }
-
           .feature-card-inner {
             padding: 26px;
           }
@@ -543,3 +580,7 @@ function InfoHint({ text }: { text: string }) {
     </Tooltip>
   )
 }
+
+
+
+

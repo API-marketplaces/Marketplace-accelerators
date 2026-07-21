@@ -1,10 +1,19 @@
 export const INDUSTRIES = [
   'Fintech',
-  'Healthcare', 
+  'Banking & Financial Services',
+  'Healthcare',
+  'Insurance',
   'E-commerce / Retail',
+  'IT / Software Services',
+  'Telecommunications',
   'Social Media / Content',
   'Logistics / Mapping',
   'SaaS / B2B Tech',
+  'Travel & Hospitality',
+  'Education / EdTech',
+  'Media & Entertainment',
+  'Manufacturing',
+  'Government / Public Sector',
   'Other'
 ];
 

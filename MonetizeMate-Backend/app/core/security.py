@@ -91,3 +91,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     # Return the user as a UserPublic schema model
     return AudienceResponse.model_validate(user)
 
+
+async def get_current_admin_user(current_user: AudienceResponse = Depends(get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user

@@ -6,9 +6,11 @@ from app.api import file_endpoints
 from app.api import dashboard_endpoints
 from app.api import prediction_endpoints
 from app.api import questionnaire_endpoints
-from app.api import concierge_endpoints  
+from app.api import concierge_endpoints
 from app.api import support_endpoints
 from app.api import api_source_endpoints
+from app.api import admin_endpoints
+from app.api import business_profile_endpoints
 from app.database.database import create_tables
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -63,7 +65,10 @@ app.include_router(monetization_recommendation_endpoints.router, prefix="/api/v1
 app.include_router(concierge_endpoints.router, prefix="/api/v1", tags=["AI Concierge"])
 app.include_router(support_endpoints.router, prefix="/api/v1", tags=["Support"])
 app.include_router(api_source_endpoints.router, prefix="/api/v1", tags=["API Sources"])
+app.include_router(admin_endpoints.router, prefix="/api/v1", tags=["Admin"])
+app.include_router(business_profile_endpoints.router, prefix="/api/v1", tags=["Business Profiles"])
 
 @app.get("/")
 async def root():
     return {"message": "Welcome to the FastAPI User Authentication API. Go to /docs for API documentation."}
+

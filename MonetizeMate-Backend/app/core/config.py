@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     UPLOAD_DIRECTORY: str = os.getenv("UPLOAD_DIRECTORY", "/home/data/uploads")
     MAX_UPLOAD_SIZE_MB: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "250"))
     MODEL_STORAGE_DIR: str = "trained_ml_models"
-    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY","")
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     FRONTEND_URL: List[str] = Field(default=["http://localhost:3000"])
     SMTP_HOST: str = os.getenv("SMTP_HOST", "")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     SUPPORT_EMAIL: str = os.getenv("SUPPORT_EMAIL", os.getenv("SMTP_FROM_EMAIL", ""))
     SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", "15"))
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@monetizemate.com")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@12345")
+    ADMIN_NAME: str = os.getenv("ADMIN_NAME", "MonetizeMate Admin")
 
     # Azure service principal credentials (optional).
     # When all three are provided, the /api-sources/test-connection endpoint
@@ -36,3 +39,4 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
+

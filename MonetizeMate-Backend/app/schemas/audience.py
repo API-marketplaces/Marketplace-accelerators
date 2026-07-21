@@ -10,6 +10,21 @@ class AudienceBase(BaseModel):
     email: EmailStr = Field(..., example="jane.doe@example.com", description="User's unique email address.")
     name: str = Field(..., min_length=1, max_length=100, example="Jane Doe", description="Full name of the user.")
     is_active: Optional[bool] = Field(True, description="Indicates if the user account is active.")
+    first_name: Optional[str] = Field(None, max_length=100)
+    last_name: Optional[str] = Field(None, max_length=100)
+    company_name: Optional[str] = Field(None, max_length=150)
+    job_title: Optional[str] = Field(None, max_length=120)
+    department: Optional[str] = Field(None, max_length=120)
+    country: Optional[str] = Field(None, max_length=100)
+    industry: Optional[str] = Field(None, max_length=120)
+    company_size: Optional[str] = Field(None, max_length=80)
+    annual_revenue: Optional[str] = Field(None, max_length=80)
+    api_maturity: Optional[str] = Field(None, max_length=80)
+    primary_objectives: Optional[str] = Field(None, description="JSON encoded selected primary objectives.")
+    api_gateway: Optional[str] = Field(None, max_length=100)
+    apis_managed: Optional[str] = Field(None, max_length=80)
+    team_size: Optional[str] = Field(None, max_length=80)
+    analytics_consent: Optional[bool] = Field(False)
 
 # --- UserCreate: Schema for creating a new user ---
 # Inherits from UserBase and adds the 'password' field.
@@ -43,6 +58,7 @@ class AudienceResponse(AudienceBase):
     Excludes sensitive information like the hashed password.
     """
     id: int = Field(..., description="Unique identifier for the user.")
+    is_admin: bool = Field(False, description="Indicates if the user has admin dashboard access.")
 
     # Pydantic's ORM mode is crucial here for converting SQLAlchemy model instances
     # into Pydantic model instances for API responses.
@@ -85,3 +101,6 @@ class TokenData(BaseModel):
     Schema for data expected to be inside a token (e.g., username).
     """
     email: Optional[str] = Field(None, example="audience@example.com", description="The email of the audience associated with the token.")
+
+
+

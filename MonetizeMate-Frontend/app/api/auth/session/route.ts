@@ -47,6 +47,7 @@ export async function GET(req: Request) {
       email: user.email,
       name: user.name,
       is_active: user.is_active,
+      is_admin: Boolean(user.is_admin),
       id: user.id,
     };
 
@@ -56,3 +57,4 @@ export async function GET(req: Request) {
     return NextResponse.json({ authenticated: false, user: null, error: message });
   }
 }
+

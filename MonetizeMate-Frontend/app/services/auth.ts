@@ -4,6 +4,7 @@ export type SessionUser = {
   email: string
   name?: string
   is_active?: boolean
+  is_admin?: boolean
   id?: number
 }
 
@@ -22,7 +23,27 @@ export function getSession() {
   return apiFetch<{ authenticated: boolean; user: SessionUser | null }>('/api/auth/session')
 }
 
-export function signup(data: { email: string; password: string; firstName?: string; lastName?: string }) {
+export type SignupPayload = {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  companyName: string
+  jobTitle: string
+  department?: string
+  country: string
+  industry: string
+  companySize: string
+  annualRevenue?: string
+  apiMaturity: string
+  primaryObjectives: string[]
+  apiGateway: string
+  apisManaged: string
+  teamSize: string
+  analyticsConsent: boolean
+}
+
+export function signup(data: SignupPayload) {
   return apiFetch<{ ok: true }>('/api/auth/signup', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -51,3 +72,5 @@ export function resetPassword(data: { email: string; password: string; token: st
     }
   })
 }
+
+

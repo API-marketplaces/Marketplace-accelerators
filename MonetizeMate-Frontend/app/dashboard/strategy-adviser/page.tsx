@@ -42,40 +42,36 @@ export default function StrategyAdviserPage() {
                 </div>
 
                 <div className="strategy-grid">
-                    <Card
-                        className="strategy-option"
-                        onClick={() => router.push('/dashboard/strategy-adviser/business-data')}
-                    >
+                    <Card className="strategy-option strategy-option-disabled" aria-disabled="true">
+                        <span className="strategy-coming-soon">Coming Soon</span>
                         <div className="strategy-option-body">
                             <span className="strategy-option-icon">
                                 <BriefcaseBusiness className="w-8 h-8" />
                             </span>
                             <h3>Business Data</h3>
                             <p>
-                                Enter your business details and API metrics to generate personalized monetization recommendations.
+                                Build a categorized business profile — saved and reusable — to generate personalized monetization recommendations.
                             </p>
 
                             <div className="strategy-info">
-                                <h4>Business Assessment</h4>
+                                <h4>Business Profile Builder</h4>
                                 <ul>
-                                    <li>Company, region, and industry profile</li>
-                                    <li>API usage and consumer metrics</li>
-                                    <li>Revenue target and charging preference</li>
+                                    <li>Business Model, Customers, APIs sections</li>
+                                    <li>Revenue, Technology, and Objectives sections</li>
+                                    <li>Save and reuse profiles across assessments</li>
                                     <li>Strategic API importance</li>
                                 </ul>
                             </div>
 
-                            <Button className="strategy-option-button">
+                            <Button className="strategy-option-button" disabled>
                                 <BriefcaseBusiness className="w-4 h-4 mr-2" />
                                 Enter Business Data
                             </Button>
                         </div>
                     </Card>
 
-                    <Card
-                        className="strategy-option"
-                        onClick={() => router.push('/dashboard/strategy-adviser/ai-chat?fresh=1')}
-                    >
+                    <Card className="strategy-option strategy-option-disabled" aria-disabled="true">
+                        <span className="strategy-coming-soon">Coming Soon</span>
                         <div className="strategy-option-body">
                             <span className="strategy-option-icon strategy-option-icon-chat">
                                 <Bot className="w-8 h-8" />
@@ -95,7 +91,7 @@ export default function StrategyAdviserPage() {
                                 </ul>
                             </div>
 
-                            <Button className="strategy-option-button">
+                            <Button className="strategy-option-button" disabled>
                                 <Bot className="w-4 h-4 mr-2" />
                                 Chat with AI
                             </Button>
@@ -228,6 +224,7 @@ export default function StrategyAdviserPage() {
                 }
 
                 .strategy-option {
+                    position: relative;
                     min-height: 500px;
                     padding: 38px 34px 32px;
                     border-radius: 12px;
@@ -244,6 +241,36 @@ export default function StrategyAdviserPage() {
                     transform: translateY(-4px);
                     border-color: rgba(143, 252, 240, 0.48);
                     box-shadow: 0 30px 86px rgba(0, 229, 192, 0.15);
+                }
+
+                .strategy-option-disabled {
+                    opacity: 0.45;
+                    cursor: not-allowed;
+                    pointer-events: none;
+                    filter: grayscale(0.3);
+                }
+
+                .strategy-option-disabled:hover {
+                    transform: none;
+                    border-color: rgba(0, 229, 192, 0.22);
+                    box-shadow:
+                        0 28px 80px rgba(0, 0, 0, 0.28),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+                }
+
+                .strategy-coming-soon {
+                    position: absolute;
+                    top: 16px;
+                    right: 16px;
+                    padding: 5px 12px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(255, 255, 255, 0.28);
+                    background: rgba(0, 0, 0, 0.35);
+                    color: #ffffff;
+                    font-size: 11px;
+                    font-weight: 800;
+                    letter-spacing: 0.02em;
+                    text-transform: uppercase;
                 }
 
                 .strategy-option-body {

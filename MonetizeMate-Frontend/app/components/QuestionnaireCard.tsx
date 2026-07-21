@@ -1,249 +1,215 @@
 'use client';
 
-import { Button } from "./ui/button";
+import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
-import { Label } from "./ui/label";
-import { Progress } from "./ui/progress";
+import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { Textarea } from "./ui/textarea";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { ANSWER_OPTIONS, QUESTIONNAIRE_QUESTIONS } from '../constants/strategy-constants';
-import { QuestionnaireAnswers } from "../types/QuestionnaireAnswers";
+
+export interface GeneratedQuestion {
+    id: string;
+    title: string;
+    description: string;
+    options: { label: string; value: string }[];
+}
 
 interface QuestionnaireCardProps {
-    currentStep: number;
-    setCurrentStep: (step: number | ((prev: number) => number)) => void;
-    answers: Partial<QuestionnaireAnswers>;
-    setAnswers: (answers: Partial<QuestionnaireAnswers> | ((prev: Partial<QuestionnaireAnswers>) => Partial<QuestionnaireAnswers>)) => void;
-    direction: 'forward' | 'backward';
-    setDirection: (direction: 'forward' | 'backward') => void;
+    question: GeneratedQuestion;
+    questionNumber: number;
+    estimatedTotal: number;
+    currentAnswer: string;
+    onAnswerChange: (value: string) => void;
+    onNext: () => void;
+    onSkip: () => void;
+    onPrevious: () => void;
+    canGoBack: boolean;
     selectedIndustry: string;
-    handleNext: () => void;
+    isLastQuestion?: boolean;
 }
 
 const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
-    currentStep,
-    setCurrentStep,
-    answers,
-    setAnswers,
-    setDirection,
+    question,
+    questionNumber,
+    estimatedTotal,
+    currentAnswer,
+    onAnswerChange,
+    onNext,
+    onSkip,
+    onPrevious,
+    canGoBack,
     selectedIndustry,
-    handleNext
+    isLastQuestion = false,
 }) => {
-    const progress = ((currentStep + 1) / QUESTIONNAIRE_QUESTIONS.length) * 100;
-    const currentQuestion = QUESTIONNAIRE_QUESTIONS[currentStep];
-    const currentAnswer = answers[currentQuestion?.id as keyof QuestionnaireAnswers];
-    const valueToShow = currentAnswer === undefined ? '' : currentAnswer.toString();
+    const progress = Math.min((questionNumber / estimatedTotal) * 100, 95);
+    const customPrefix = 'Custom: ';
+    const customAnswer = currentAnswer.startsWith(customPrefix) ? currentAnswer.slice(customPrefix.length) : '';
+
+    // The LLM sometimes generates its own "Other" option alongside our built-in
+    // custom-answer option below — drop any such duplicates so only one "Other" shows.
+    const isOtherLikeOption = (label: string) => /^other\b/i.test(label.trim()) || /please specify/i.test(label);
+    const visibleOptions = question.options.filter((option) => !isOtherLikeOption(option.label));
+
+    const [showOtherInput, setShowOtherInput] = useState(
+        currentAnswer.startsWith(customPrefix) || (!!currentAnswer && isOtherLikeOption(currentAnswer))
+    );
+    const isOtherSelected = showOtherInput || currentAnswer.startsWith(customPrefix);
+
+    useEffect(() => {
+        setShowOtherInput(currentAnswer.startsWith(customPrefix) || (!!currentAnswer && isOtherLikeOption(currentAnswer)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [question.id]);
+
+    const handleCustomAnswerChange = (value: string) => {
+        onAnswerChange(value.trim() ? `${customPrefix}${value}` : '');
+    };
+
+    const handleSelectOther = () => {
+        setShowOtherInput(true);
+        if (!currentAnswer.startsWith(customPrefix)) {
+            onAnswerChange('');
+        }
+    };
 
     return (
-        <Card className="questionnaire-card">
-            <div className="questionnaire-progress">
-                <div className="questionnaire-meta">
-                    <span>Question {currentStep + 1} of {QUESTIONNAIRE_QUESTIONS.length}</span>
-                    <Badge variant="outline" className="questionnaire-badge">{selectedIndustry}</Badge>
+        <Card className="p-8 rounded-2xl border shadow-lg">
+            {/* Progress header */}
+            <div className="mb-7">
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-extrabold text-teal-500">
+                        Question {questionNumber}
+                    </span>
+                    <Badge variant="outline" className="text-teal-600 border-teal-400 dark:text-teal-300 dark:border-teal-600 font-bold">
+                        {selectedIndustry}
+                    </Badge>
                 </div>
-                <Progress value={progress} className="questionnaire-progress-bar" />
+                {/* Progress bar */}
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                        className="h-full rounded-full bg-gradient-to-r from-teal-400 to-teal-500 transition-all duration-500"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
             </div>
 
-            <div className="questionnaire-body">
-                <h2>{currentQuestion.title}</h2>
-                <p>{currentQuestion.description}</p>
+            {/* Question text */}
+            <h2 className="text-xl font-extrabold text-foreground mb-2 leading-snug">
+                {question.title}
+            </h2>
+            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                {question.description}
+            </p>
 
-                <RadioGroup key={currentQuestion.id} value={valueToShow} onValueChange={(value: string) => {
-                    setAnswers(prev => ({ ...prev, [currentQuestion.id]: parseInt(value) }));
-                    setDirection('backward');
-                }}>
-                    <div className="questionnaire-options">
-                        {ANSWER_OPTIONS.map((option) => (
-                            <div key={option.value} className="questionnaire-option" data-selected={valueToShow === option.value.toString()}>
-                                <RadioGroupItem value={option.value.toString()} id={`${currentQuestion.id}-${option.value}`} className="questionnaire-radio" />
-                                <Label htmlFor={`${currentQuestion.id}-${option.value}`} className="questionnaire-label">
-                                    {option.text}
-                                </Label>
+            {/* Options */}
+            <div className="grid gap-3 mb-5">
+                {visibleOptions.map((option) => {
+                    const isSelected = currentAnswer === option.value;
+                    return (
+                        <div
+                            key={option.value}
+                            onClick={() => {
+                                setShowOtherInput(false);
+                                onAnswerChange(option.value);
+                            }}
+                            className={[
+                                'flex items-center gap-4 px-4 py-4 rounded-xl border cursor-pointer transition-all duration-150',
+                                isSelected
+                                    ? 'border-teal-400 bg-teal-50 dark:bg-teal-900/20 dark:border-teal-500'
+                                    : 'border-border bg-muted/40 hover:bg-muted hover:border-teal-300 dark:hover:border-teal-600',
+                            ].join(' ')}
+                        >
+                            {/* Radio indicator */}
+                            <div className={[
+                                'w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all',
+                                isSelected
+                                    ? 'border-teal-500 bg-teal-500'
+                                    : 'border-muted-foreground/40',
+                            ].join(' ')}>
+                                {isSelected && (
+                                    <div className="w-2 h-2 rounded-full bg-white" />
+                                )}
                             </div>
-                        ))}
+                            <span className={[
+                                'text-sm leading-snug select-none',
+                                isSelected
+                                    ? 'font-bold text-teal-700 dark:text-teal-300'
+                                    : 'font-medium text-foreground',
+                            ].join(' ')}>
+                                {option.label}
+                            </span>
+                        </div>
+                    );
+                })}
+
+                {/* Other / custom answer */}
+                <div
+                    onClick={handleSelectOther}
+                    className={[
+                        'flex items-center gap-4 px-4 py-4 rounded-xl border cursor-pointer transition-all duration-150',
+                        isOtherSelected
+                            ? 'border-teal-400 bg-teal-50 dark:bg-teal-900/20 dark:border-teal-500'
+                            : 'border-border bg-muted/40 hover:bg-muted hover:border-teal-300 dark:hover:border-teal-600',
+                    ].join(' ')}
+                >
+                    <div className={[
+                        'w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all',
+                        isOtherSelected
+                            ? 'border-teal-500 bg-teal-500'
+                            : 'border-muted-foreground/40',
+                    ].join(' ')}>
+                        {isOtherSelected && (
+                            <div className="w-2 h-2 rounded-full bg-white" />
+                        )}
                     </div>
-                </RadioGroup>
+                    <span className={[
+                        'text-sm leading-snug select-none',
+                        isOtherSelected
+                            ? 'font-bold text-teal-700 dark:text-teal-300'
+                            : 'font-medium text-foreground',
+                    ].join(' ')}>
+                        Other (please specify)
+                    </span>
+                </div>
+                {isOtherSelected && (
+                    <Textarea
+                        autoFocus
+                        placeholder="Type your answer here..."
+                        value={customAnswer}
+                        onChange={(e) => handleCustomAnswerChange(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="min-h-[80px]"
+                    />
+                )}
             </div>
 
-            <div className="questionnaire-actions">
-                <Button variant="outline" onClick={() => { setDirection('backward'); setCurrentStep(prev => prev - 1); }} disabled={currentStep === 0} className="questionnaire-secondary">
+            {/* Actions */}
+            <div className="flex justify-between gap-4 pt-6 border-t border-border">
+                <Button
+                    variant="outline"
+                    onClick={onPrevious}
+                    disabled={!canGoBack}
+                    className="min-w-[110px] h-11 font-bold"
+                >
                     <ArrowLeft className="w-4 h-4 mr-2" /> Previous
                 </Button>
-                <Button onClick={handleNext} disabled={!valueToShow} className="questionnaire-primary">
-                    {currentStep === QUESTIONNAIRE_QUESTIONS.length - 1 ? 'Get Recommendations' : 'Next'}
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                <div className="flex gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={onSkip}
+                        className="min-w-[110px] h-11 font-bold border-teal-300 text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:border-teal-700 dark:hover:bg-teal-950/30"
+                    >
+                        Skip
+                    </Button>
+                    <Button
+                        onClick={onNext}
+                        disabled={!currentAnswer}
+                        className="min-w-[160px] h-11 font-bold bg-teal-500 hover:bg-teal-400 text-white border-0"
+                    >
+                        {isLastQuestion ? 'Get Recommendations' : 'Next'}
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                </div>
             </div>
-            <style>{`
-                .questionnaire-card {
-                    padding: 32px;
-                    border-radius: 18px;
-                    border: 1px solid rgba(0, 229, 192, 0.22);
-                    background: rgba(17, 34, 54, 0.92);
-                    box-shadow:
-                        0 28px 80px rgba(0, 0, 0, 0.28),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.06);
-                    color: #ffffff;
-                }
-
-                .questionnaire-progress {
-                    margin-bottom: 30px;
-                }
-
-                .questionnaire-meta {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 16px;
-                    margin-bottom: 12px;
-                }
-
-                .questionnaire-meta > span {
-                    color: #00e5c0;
-                    font-size: 13px;
-                    font-weight: 900;
-                }
-
-                .questionnaire-badge {
-                    border-color: rgba(143, 252, 240, 0.68);
-                    background: rgba(0, 229, 192, 0.12);
-                    color: #8ffcf0;
-                    font-weight: 800;
-                }
-
-                .questionnaire-progress-bar {
-                    height: 8px;
-                    overflow: hidden;
-                    background: rgba(0, 0, 0, 0.28);
-                }
-
-                .questionnaire-progress-bar [data-slot="progress-indicator"] {
-                    background: linear-gradient(135deg, #00e5c0, #38e6d0);
-                }
-
-                .questionnaire-body h2 {
-                    margin: 0 0 14px;
-                    color: #ffffff;
-                    font-size: 22px;
-                    line-height: 1.35;
-                    font-weight: 800;
-                }
-
-                .questionnaire-body > p {
-                    margin: 0 0 26px;
-                    color: #00e5c0;
-                    font-size: 15px;
-                    line-height: 1.6;
-                    font-weight: 700;
-                }
-
-                .questionnaire-options {
-                    display: grid;
-                    gap: 12px;
-                }
-
-                .questionnaire-option {
-                    display: flex;
-                    align-items: center;
-                    gap: 14px;
-                    min-height: 56px;
-                    padding: 14px 16px;
-                    border-radius: 12px;
-                    border: 1px solid rgba(143, 252, 240, 0.16);
-                    background: rgba(31, 47, 68, 0.7);
-                    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-                }
-
-                .questionnaire-option:hover {
-                    border-color: rgba(143, 252, 240, 0.38);
-                    background: rgba(36, 55, 79, 0.98);
-                }
-
-                .questionnaire-option[data-selected="true"] {
-                    border-color: #8ffcf0;
-                    background: linear-gradient(135deg, rgba(0, 229, 192, 0.26), rgba(17, 211, 186, 0.14));
-                    box-shadow: 0 0 0 3px rgba(143, 252, 240, 0.12);
-                }
-
-                .questionnaire-radio {
-                    border-color: rgba(255, 255, 255, 0.72);
-                    color: #00e5c0;
-                }
-
-                .questionnaire-option[data-selected="true"] .questionnaire-radio {
-                    border-color: #8ffcf0;
-                    background: #00e5c0;
-                    color: #061421;
-                }
-
-                .questionnaire-label {
-                    flex: 1;
-                    cursor: pointer;
-                    color: rgba(255, 255, 255, 0.9);
-                    font-size: 15px;
-                    font-weight: 800;
-                }
-
-                .questionnaire-option[data-selected="true"] .questionnaire-label {
-                    color: #ffffff;
-                }
-
-                .questionnaire-actions {
-                    display: flex;
-                    justify-content: space-between;
-                    gap: 16px;
-                    margin-top: 30px;
-                    padding-top: 24px;
-                    border-top: 1px solid rgba(255, 255, 255, 0.08);
-                }
-
-                .questionnaire-secondary,
-                .questionnaire-primary {
-                    min-width: 124px;
-                    height: 44px;
-                    border-radius: 10px;
-                    font-weight: 900;
-                }
-
-                .questionnaire-secondary {
-                    border-color: rgba(0, 229, 192, 0.34);
-                    background: rgba(0, 229, 192, 0.1);
-                    color: #8ffcf0;
-                }
-
-                .questionnaire-secondary:hover {
-                    background: rgba(0, 229, 192, 0.18);
-                    color: #ffffff;
-                }
-
-                .questionnaire-primary {
-                    background: #11d3ba;
-                    color: #061421;
-                }
-
-                .questionnaire-primary:hover {
-                    background: #38e6d0;
-                    color: #061421;
-                }
-
-                @media (max-width: 640px) {
-                    .questionnaire-card {
-                        padding: 22px;
-                    }
-
-                    .questionnaire-meta,
-                    .questionnaire-actions {
-                        align-items: stretch;
-                        flex-direction: column;
-                    }
-
-                    .questionnaire-secondary,
-                    .questionnaire-primary {
-                        width: 100%;
-                    }
-                }
-            `}</style>
         </Card>
     );
 };

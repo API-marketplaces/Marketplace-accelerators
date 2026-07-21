@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getSession, login as loginSvc, logout as logoutSvc, requestPasswordResetLink as requestPasswordResetLinkSvc, resetPassword as resetPasswordSvc, signup as signupSvc } from '../services/auth'
+import { getSession, login as loginSvc, logout as logoutSvc, requestPasswordResetLink as requestPasswordResetLinkSvc, resetPassword as resetPasswordSvc, signup as signupSvc, type SignupPayload } from '../services/auth'
 
 export function useAuth() {
   const qc = useQueryClient()
@@ -18,7 +18,7 @@ export function useAuth() {
   })
 
   const signup = useMutation({
-    mutationFn: (data: { email: string; password: string; firstName?: string; lastName?: string }) => signupSvc(data),
+    mutationFn: (data: SignupPayload) => signupSvc(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['auth', 'session'] }),
   })
 
@@ -56,3 +56,4 @@ export function useAuth() {
     loggingOut: logout.isPending,
   }
 }
+

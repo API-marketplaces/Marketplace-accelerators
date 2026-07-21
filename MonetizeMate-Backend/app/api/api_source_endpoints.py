@@ -20,17 +20,41 @@ Azure connection validation uses a two-tier approach:
 """
 
 import os
-from typing import Optional
+from typing import Optional, List
 from urllib.parse import urlparse
 
 import requests
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from datetime import datetime
 
 from app.core.security import get_current_user
 from app.schemas.audience import AudienceResponse
+from app.database.database import get_db
+from app.crud import gateway_connections as crud_gateway_connections
+from sqlalchemy.orm import Session
 
 router = APIRouter()
+
+
+class GatewayConnectionCreate(BaseModel):
+    provider: str
+    name: str
+    description: Optional[str] = None
+
+
+class GatewayConnectionPublic(BaseModel):
+    id: int
+    provider: str
+    name: str
+    description: Optional[str] = None
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
 
 # ── Azure ARM constants ────────────────────────────────────────────────────────
 _ARM_BASE = "https://management.azure.com"
@@ -72,14 +96,30 @@ def _probe_gateway(gateway_url: str) -> dict:
     """
     Tier 1 – Gateway fingerprint probe.
 
-    Sends a GET to the gateway URL and checks for Azure APIM-specific
-    response headers.  Azure APIM always returns x-ms-request-id
-    regardless of whether an API route exists, giving us a reliable
-    fingerprint without any credentials.
+    Confirms the URL is a live Azure APIM instance using four independent signals:
 
-    Returns a dict with keys: status_code, is_azure_apim, auth_required.
+    1. **Hostname** – the URL ends with `.azure-api.net`, which is Azure's
+       dedicated domain for APIM gateway endpoints.  This alone is a strong
+       indicator.
+
+    2. **Response headers** – Azure APIM injects `x-ms-request-id` and
+       related `Ocp-Apim-*` headers on most responses.
+
+    3. **Response body** – Azure APIM returns a standard JSON error body on
+       unknown paths:  {"statusCode": 404, "message": "Resource not found"}
+
+    4. **401 Bearer challenge** – a 401 with `WWW-Authenticate: Bearer` means
+       the gateway is live and requires a subscription key.
+
+    Returns a dict with keys: status_code, is_azure_apim, auth_required, signals.
     Raises HTTPException on network/TLS failure.
     """
+    parsed = urlparse(gateway_url)
+    hostname = parsed.netloc.lower().split(":")[0]  # strip port if present
+
+    # Signal 1: Azure's dedicated APIM gateway domain.
+    hostname_match = hostname.endswith(".azure-api.net") or hostname == "azure-api.net"
+
     try:
         resp = requests.get(gateway_url, timeout=12, allow_redirects=True)
     except requests.exceptions.SSLError as exc:
@@ -105,19 +145,50 @@ def _probe_gateway(gateway_url: str) -> dict:
     # Normalise header names to lowercase for case-insensitive matching.
     resp_headers_lower = {k.lower(): v for k, v in resp.headers.items()}
 
-    is_azure_apim = bool(_AZURE_FINGERPRINT_HEADERS & set(resp_headers_lower))
+    # Signal 2: Azure APIM-specific response headers.
+    headers_match = bool(_AZURE_FINGERPRINT_HEADERS & set(resp_headers_lower))
 
-    # A 401 with a Bearer WWW-Authenticate challenge is also a strong signal.
+    # Signal 3: Azure APIM standard JSON error body on unknown paths.
+    # Root path with no subscription key → {"statusCode":404,"message":"Resource not found"}
+    body_match = False
+    try:
+        body = resp.json()
+        if isinstance(body, dict):
+            status_code_field = body.get("statusCode") or body.get("status_code")
+            message_field = (body.get("message") or "").lower()
+            # Azure APIM body fingerprints:
+            #   {"statusCode": 404, "message": "Resource not found"}
+            #   {"statusCode": 401, "message": "Access denied due to missing subscription key ..."}
+            #   {"statusCode": 401, "message": "Access denied due to invalid subscription key"}
+            body_match = status_code_field in {401, 404} and (
+                "resource not found" in message_field
+                or "access denied" in message_field
+                or "subscription key" in message_field
+                or "missing subscription" in message_field
+            )
+    except Exception:
+        pass
+
+    # Signal 4: 401 with a Bearer WWW-Authenticate challenge.
     www_auth = resp_headers_lower.get("www-authenticate", "")
     auth_required = resp.status_code == 401 and "bearer" in www_auth.lower()
-    if auth_required:
-        is_azure_apim = True
+
+    # Any single confirmed signal is sufficient to identify a live Azure APIM.
+    signals = {
+        "hostname": hostname_match,
+        "headers": headers_match,
+        "body": body_match,
+        "bearer_challenge": auth_required,
+    }
+    is_azure_apim = any(signals.values())
 
     return {
         "status_code": resp.status_code,
         "is_azure_apim": is_azure_apim,
         "auth_required": auth_required,
+        "signals": signals,
     }
+
 
 
 def _get_arm_token(tenant_id: str, client_id: str, client_secret: str) -> str:
@@ -260,21 +331,31 @@ def test_api_source_connection(
 
     # ── Tier 1: Gateway fingerprint probe ─────────────────────────────────────
     probe = _probe_gateway(gateway_url)
+    signals = probe.get("signals", {})
 
     if not probe["is_azure_apim"]:
-        # The URL is reachable but shows no Azure APIM response headers —
-        # flag it as a warning but do not block the user (the gateway may be
-        # configured to strip headers, or a CDN sits in front of it).
+        # The URL is reachable but no Azure signal was detected.
         gateway_note = (
-            "Warning: Azure APIM response headers were not detected. "
-            "The gateway may be behind a proxy or the URL may not be an APIM instance."
+            "Warning: Could not confirm this is an Azure APIM instance. "
+            "The gateway URL is reachable but shows no Azure-specific fingerprints."
         )
     else:
-        gateway_note = (
-            "Azure APIM gateway fingerprint confirmed."
-            if not probe["auth_required"]
-            else "Azure APIM gateway fingerprint confirmed (subscription key required)."
-        )
+        # Build a specific message based on which signals fired.
+        confirmed_via = []
+        if signals.get("hostname"):
+            confirmed_via.append("Azure APIM gateway domain (azure-api.net)")
+        if signals.get("body"):
+            confirmed_via.append("Azure APIM JSON error response body")
+        if signals.get("headers"):
+            confirmed_via.append("Azure APIM response headers")
+        if signals.get("bearer_challenge"):
+            confirmed_via.append("Azure Bearer subscription-key challenge")
+
+        via_str = " · ".join(confirmed_via) if confirmed_via else "Azure APIM fingerprint"
+        if probe["auth_required"]:
+            gateway_note = f"Azure APIM gateway confirmed ({via_str}). Subscription key required."
+        else:
+            gateway_note = f"Azure APIM gateway confirmed ({via_str})."
 
     result: dict = {
         "success": True,
@@ -287,6 +368,7 @@ def test_api_source_connection(
         "gatewayUrl": gateway_url,
         "gatewayStatus": probe["status_code"],
         "azureApimFingerprint": probe["is_azure_apim"],
+        "fingerprintSignals": signals,
     }
 
     # ── Tier 2: ARM REST API validation (only when SP creds are configured) ───
@@ -312,3 +394,55 @@ def test_api_source_connection(
         result["armValidation"] = "skipped (no service principal credentials configured)"
 
     return result
+
+
+@router.get("/api-sources/", response_model=List[GatewayConnectionPublic])
+def list_gateway_connections(
+    db: Session = Depends(get_db),
+    current_user: AudienceResponse = Depends(get_current_user),
+):
+    """
+    List all gateway connections for the authenticated user.
+    """
+    return crud_gateway_connections.get_connections_by_owner(db, current_user.id)
+
+
+@router.post("/api-sources/", response_model=GatewayConnectionPublic, status_code=status.HTTP_201_CREATED)
+def create_gateway_connection(
+    request: GatewayConnectionCreate,
+    db: Session = Depends(get_db),
+    current_user: AudienceResponse = Depends(get_current_user),
+):
+    """
+    Create a new gateway connection for the authenticated user.
+    """
+    return crud_gateway_connections.create_connection(
+        db=db,
+        provider=request.provider,
+        name=request.name,
+        description=request.description or "",
+        audience_id=current_user.id,
+    )
+
+
+@router.delete("/api-sources/{connection_id}", response_model=GatewayConnectionPublic)
+def delete_gateway_connection(
+    connection_id: int,
+    db: Session = Depends(get_db),
+    current_user: AudienceResponse = Depends(get_current_user),
+):
+    """
+    Delete a specific gateway connection for the authenticated user.
+    """
+    record = crud_gateway_connections.delete_connection(
+        db=db,
+        connection_id=connection_id,
+        audience_id=current_user.id,
+    )
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail="Gateway connection not found or not authorized.",
+        )
+    return record
+

@@ -38,15 +38,39 @@ function authProxyError(error: unknown) {
 
 export async function POST(req: Request) {
   try {
-    const { email, password, firstName, lastName } = await req.json()
+    const body = await req.json()
+    const { email, password, firstName, lastName } = body
     const normalizedEmail = String(email || '').trim().toLowerCase()
     const normalizedPassword = String(password || '').trim()
-    const name = `${firstName || ''} ${lastName || ''}`.trim() || normalizedEmail
+    const normalizedFirstName = String(firstName || '').trim()
+    const normalizedLastName = String(lastName || '').trim()
+    const name = `${normalizedFirstName} ${normalizedLastName}`.trim() || normalizedEmail
+
+    const registerPayload = {
+      email: normalizedEmail,
+      password: normalizedPassword,
+      name,
+      first_name: normalizedFirstName,
+      last_name: normalizedLastName,
+      company_name: String(body.companyName || '').trim(),
+      job_title: String(body.jobTitle || '').trim(),
+      department: String(body.department || '').trim() || null,
+      country: String(body.country || '').trim(),
+      industry: String(body.industry || '').trim(),
+      company_size: String(body.companySize || '').trim(),
+      annual_revenue: String(body.annualRevenue || '').trim() || null,
+      api_maturity: String(body.apiMaturity || '').trim(),
+      primary_objectives: JSON.stringify(Array.isArray(body.primaryObjectives) ? body.primaryObjectives : []),
+      api_gateway: String(body.apiGateway || '').trim(),
+      apis_managed: String(body.apisManaged || '').trim(),
+      team_size: String(body.teamSize || '').trim(),
+      analytics_consent: Boolean(body.analyticsConsent),
+    }
 
     const registerRes = await fetch(`${API}/api/v1/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: normalizedEmail, password: normalizedPassword, name }),
+      body: JSON.stringify(registerPayload),
     })
 
     if (!registerRes.ok) {
@@ -83,3 +107,4 @@ export async function POST(req: Request) {
     return authProxyError(error)
   }
 }
+

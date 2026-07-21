@@ -18,6 +18,7 @@ import {
   KeyRound,
   Lock,
   Mail,
+  ShieldCheck,
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import ThemeToggle from '../../components/ThemeToggle'
@@ -143,7 +144,11 @@ function LoginContent() {
 
   return (
     <main className="signin-shell">
-      <div className="signin-theme-toggle">
+      <div className="signin-top-actions">
+        <button type="button" className="admin-login-link" onClick={() => router.push('/admin/login')}>
+          <ShieldCheck aria-hidden="true" />
+          <span>Admin Login</span>
+        </button>
         <ThemeToggle />
       </div>
       <section className={`signin-layout ${mode === 'reset' ? 'reset-layout' : ''}`}>
@@ -381,6 +386,44 @@ function LoginContent() {
           padding: 56px 24px;
         }
 
+        .signin-top-actions {
+          position: fixed;
+          top: 18px;
+          right: 24px;
+          z-index: 20;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .admin-login-link {
+          height: 38px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: 1px solid rgba(0, 229, 192, 0.24);
+          border-radius: 999px;
+          background: rgba(0, 229, 192, 0.08);
+          color: #00E5C0;
+          padding: 0 14px;
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          cursor: pointer;
+          box-shadow: 0 12px 28px rgba(0, 229, 192, 0.08);
+        }
+
+        .admin-login-link:hover {
+          background: rgba(0, 229, 192, 0.15);
+          border-color: rgba(0, 229, 192, 0.42);
+          color: #8ffcf0;
+        }
+
+        .admin-login-link svg {
+          width: 16px;
+          height: 16px;
+        }
         .signin-shell::before {
           content: '';
           position: absolute;
@@ -751,3 +794,4 @@ export default function LoginPage() {
     </Suspense>
   )
 }
+
