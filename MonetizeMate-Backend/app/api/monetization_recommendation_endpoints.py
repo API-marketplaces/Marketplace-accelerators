@@ -9,7 +9,7 @@ from app.database.database import get_db
 from app.models.questionnaire import Questionnaire
 from app.core.config import settings
 from app.core.security import get_current_user
-from app.core.prompt_templates import build_monetization_strategy_messages
+from app.core.prompt_templates import build_monetization_strategy_messages, MONETIZATION_MODEL_CATALOG
 from app.schemas.audience import AudienceResponse
 from app.api.admin_endpoints import log_recommendation_activity
 
@@ -368,26 +368,112 @@ def _normalize_roadmap(payload: dict) -> dict:
     return {"phases": normalized_phases or _default_roadmap()["phases"]}
 
 
+def _clamp_score(value, default: int) -> int:
+    try:
+        return max(0, min(100, int(value)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_strategic_fit(raw, fallback_score: int) -> dict:
+    fit = raw if isinstance(raw, dict) else {}
+    return {
+        "partnerEcosystemReadiness": _clamp_score(fit.get("partnerEcosystemReadiness"), fallback_score),
+        "revenueModelAlignment": _clamp_score(fit.get("revenueModelAlignment"), fallback_score),
+        "infrastructureMaturity": _clamp_score(fit.get("infrastructureMaturity"), fallback_score),
+        "marketTiming": _clamp_score(fit.get("marketTiming"), fallback_score),
+    }
+
+
+def _normalize_why_this_strategy(raw, pros: list) -> list:
+    items = []
+    if isinstance(raw, list):
+        for entry in raw[:3]:
+            if isinstance(entry, dict) and entry.get("title"):
+                items.append({
+                    "title": str(entry.get("title")),
+                    "description": str(entry.get("description") or ""),
+                })
+    if items:
+        return items
+    # Fall back to the strategy's own pros so the section is never empty.
+    return [{"title": str(pro), "description": ""} for pro in (pros or [])[:3]]
+
+
+def _normalize_risk_severity(raw, risk_count: int) -> list:
+    allowed = {"consider", "low"}
+    severities = raw if isinstance(raw, list) else []
+    normalized = [str(s).lower() if str(s).lower() in allowed else "consider" for s in severities[:risk_count]]
+    while len(normalized) < risk_count:
+        normalized.append("consider")
+    return normalized
+
+
+def _normalize_next_steps(raw, implementation_steps: list) -> list:
+    items = []
+    if isinstance(raw, list):
+        for entry in raw[:4]:
+            if isinstance(entry, dict) and entry.get("action"):
+                items.append({
+                    "action": str(entry.get("action")),
+                    "timeframe": str(entry.get("timeframe") or ""),
+                })
+    if items:
+        return items
+    # Fall back to the strategy's own implementation steps with generic,
+    # sequential week labels rather than leaving the section empty.
+    fallback_timeframes = ["This week", "Week 2", "Week 3", "Week 4"]
+    return [
+        {"action": str(step), "timeframe": fallback_timeframes[i] if i < len(fallback_timeframes) else f"Week {i + 1}"}
+        for i, step in enumerate((implementation_steps or [])[:4])
+    ]
+
+
+def _normalize_model_mapping(raw) -> list:
+    """Score every model in the fixed catalog against this business. The LLM
+    is asked to return one entry per catalog model; here we fill in any it
+    skipped with a neutral fallback so the full landscape is always complete,
+    then sort by fit score so the top entry is unambiguously "the best"."""
+    by_id = {}
+    if isinstance(raw, list):
+        for entry in raw:
+            if isinstance(entry, dict) and entry.get("id"):
+                by_id[str(entry["id"])] = entry
+
+    mapping = []
+    for model in MONETIZATION_MODEL_CATALOG:
+        entry = by_id.get(model["id"], {})
+        mapping.append({
+            "id": model["id"],
+            "name": str(entry.get("name") or model["name"]),
+            "fitScore": _clamp_score(entry.get("fitScore"), 50),
+            "verdict": str(entry.get("verdict") or ""),
+        })
+
+    mapping.sort(key=lambda m: m["fitScore"], reverse=True)
+    return mapping
+
+
 def _normalize_recommendations(payload: dict, industry: str) -> dict:
     recommendations = payload.get("recommendations")
     if not isinstance(recommendations, list) or not recommendations:
         raise HTTPException(status_code=502, detail="LLM response did not include recommendations.")
 
-    allowed_icons = {"Users", "DollarSign", "TrendingUp", "Zap", "Star"}
-    fallback_icon = {
-        "freemium": "Users",
-        "subscription": "DollarSign",
-        "usage-based": "TrendingUp",
-        "hybrid": "Zap",
-        "value-based": "Star",
-    }
+    # Recommendation "id" now comes from the open MONETIZATION_MODEL_CATALOG
+    # (19 model ids) rather than a fixed 5-value enum, so the icon fallback
+    # can no longer be keyed by id — cycle through the allowed set by index.
+    allowed_icons = ["Zap", "DollarSign", "TrendingUp", "Users", "Star"]
 
     normalized = []
     for index, item in enumerate(recommendations[:5]):
         if not isinstance(item, dict):
             continue
         strategy_id = str(item.get("id") or item.get("name") or f"strategy-{index + 1}").lower().replace(" ", "-")
-        icon = item.get("icon") if item.get("icon") in allowed_icons else fallback_icon.get(strategy_id, "Star")
+        icon = item.get("icon") if item.get("icon") in allowed_icons else allowed_icons[index % len(allowed_icons)]
+        score = int(item.get("score") or max(60, 95 - index * 8))
+        pros = item.get("pros") if isinstance(item.get("pros"), list) else []
+        risks = item.get("risks") if isinstance(item.get("risks"), list) else []
+        implementation_steps = item.get("implementationSteps") if isinstance(item.get("implementationSteps"), list) else []
         normalized.append({
             "id": strategy_id,
             "name": str(item.get("name") or "Monetization Strategy"),
@@ -395,19 +481,24 @@ def _normalize_recommendations(payload: dict, industry: str) -> dict:
             "timeframe": str(item.get("timeframe") or item.get("timeline") or ""),
             "expectedRevenue": str(item.get("expectedRevenue") or item.get("revenueImpact") or ""),
             "implementation": str(item.get("implementation") or ""),
-            "implementationSteps": item.get("implementationSteps") if isinstance(item.get("implementationSteps"), list) else [],
+            "implementationSteps": implementation_steps,
             "timeline": str(item.get("timeline") or item.get("timeframe") or ""),
             "revenueImpact": str(item.get("revenueImpact") or item.get("expectedRevenue") or ""),
-            "pros": item.get("pros") if isinstance(item.get("pros"), list) else [],
+            "pros": pros,
             "cons": item.get("cons") if isinstance(item.get("cons"), list) else [],
-            "risks": item.get("risks") if isinstance(item.get("risks"), list) else [],
+            "risks": risks,
             "mitigations": item.get("mitigations") if isinstance(item.get("mitigations"), list) else [],
+            "riskSeverity": _normalize_risk_severity(item.get("riskSeverity"), len(risks)),
             "successMetrics": item.get("successMetrics") if isinstance(item.get("successMetrics"), list) else [],
             "reasoning": str(item.get("reasoning") or item.get("why") or ""),
-            "score": int(item.get("score") or max(60, 95 - index * 8)),
+            "score": score,
             "icon": icon,
             "color": str(item.get("color") or "text-blue-600"),
             "bgColor": str(item.get("bgColor") or "bg-blue-50"),
+            "strategicFit": _normalize_strategic_fit(item.get("strategicFit"), score),
+            "whyThisStrategy": _normalize_why_this_strategy(item.get("whyThisStrategy"), pros),
+            "nextSteps": _normalize_next_steps(item.get("nextSteps"), implementation_steps),
+            "revisitTrigger": str(item.get("revisitTrigger") or ""),
         })
 
     if not normalized:
@@ -736,12 +827,16 @@ def recommend_monetization_llm(
     # a low, fixed temperature for every industry/business scenario so output
     # structure stays consistent instead of drifting between calls.
     messages = build_monetization_strategy_messages(request.industry, answer_lines)
-    response_text = call_groq_sync(messages, model=STRATEGY_CHAT_MODEL, max_tokens=6500, json_mode=True, temperature=0.35)
+    # max_tokens raised from 6500: the modelMapping section scores all ~19
+    # catalog models (not just the recommended ones), adding meaningfully to
+    # the completion length on top of the existing four sections.
+    response_text = call_groq_sync(messages, model=STRATEGY_CHAT_MODEL, max_tokens=8500, json_mode=True, temperature=0.35)
     payload = _extract_json_object(response_text)
     result = _normalize_recommendations(payload, request.industry)
     result["pricing"] = _normalize_pricing(payload)
     result["packaging"] = _normalize_packaging(payload)
     result["roadmap"] = _normalize_roadmap(payload)
+    result["modelMapping"] = _normalize_model_mapping(payload.get("modelMapping"))
     log_recommendation_activity(db, current_user, request.industry, request.answers, result.get("recommendations", []))
     return result
 

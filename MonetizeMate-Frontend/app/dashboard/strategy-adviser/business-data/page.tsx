@@ -12,6 +12,12 @@ import { Card } from "../../../components/ui/card";
 import { useAuth } from "@/app/hooks/useAuth";
 import LoadingAnalysis, { GeneratingRecommendationsSteps } from "../../../components/LoadingAnalysis";
 import { downloadHtmlAsPdf } from "@/app/utils/pdf";
+import {
+    EXEC_REPORT_STYLES, xrHeader, xrBriefTitle, xrHero, xrWhyThisStrategy, xrStrategicFit,
+    xrPricingTable, xrRoadmap, xrRisksAndNextSteps, xrAdvisoryNote, xrFooter, xrList,
+    xrInfoGrid, xrSectionTitled,
+    type StrategicFit, type WhyThisStrategyItem, type NextStepItem,
+} from "@/app/utils/executiveReport";
 
 type BusinessDataFlowType = 'form' | 'analyzing' | 'generating';
 
@@ -184,148 +190,6 @@ function buildLLMAnswers(form: BusinessProfileForm) {
 
 // ─── PDF generation ──────────────────────────────────────────────────────────
 
-const BD_PDF_STYLES = `
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1a202c; background: #fff; }
-  .page { padding: 40px 48px; }
-  .header { border-bottom: 3px solid #0d9488; padding-bottom: 18px; margin-bottom: 24px; }
-  .header h1 { font-size: 22px; color: #0d9488; margin-bottom: 4px; }
-  .header .meta { font-size: 11px; color: #64748b; }
-  .section { margin-bottom: 20px; }
-  .section-title { font-size: 13px; font-weight: bold; color: #0f172a; border-left: 4px solid #0d9488; padding-left: 10px; margin-bottom: 10px; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-  .info-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; }
-  .info-box .label { font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
-  .info-box .value { font-size: 12px; color: #1e293b; }
-  .reason-box { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; }
-  .reason-box .label { font-size: 12px; font-weight: bold; color: #0f766e; margin-bottom: 6px; }
-  .reason-box p { font-size: 12px; color: #134e4a; line-height: 1.6; }
-  ul { list-style: none; padding: 0; }
-  ul li::before { content: "• "; color: #0d9488; font-weight: bold; }
-  ul li { padding: 2px 0; font-size: 11.5px; line-height: 1.5; }
-  .pros li::before { color: #16a34a; }
-  .cons li::before { color: #d97706; }
-  .steps-list { counter-reset: steps; }
-  .steps-list li { counter-increment: steps; padding: 4px 0 4px 24px; position: relative; }
-  .steps-list li::before { content: counter(steps) ". "; position: absolute; left: 0; color: #0d9488; font-weight: bold; }
-  .score-bar { height: 8px; background: #e2e8f0; border-radius: 9999px; margin-top: 4px; }
-  .score-fill { height: 100%; background: #0d9488; border-radius: 9999px; }
-  .visual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-  .visual-card { background: #f8fafc; border: 1px solid #dbe4ef; border-radius: 8px; padding: 14px; break-inside: avoid; }
-  .visual-card h3 { font-size: 12px; color: #0f172a; margin-bottom: 10px; }
-  .chart-row { display: grid; grid-template-columns: 125px 1fr 36px; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 10.5px; color: #334155; }
-  .chart-track { height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; display: block; }
-  .chart-fill { height: 100%; border-radius: inherit; background: #0d9488; display: block; }
-  .metric-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .metric-tile { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 10px; min-height: 66px; }
-  .metric-tile span { display: block; color: #64748b; font-size: 9.5px; font-weight: bold; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
-  .metric-tile strong { display: block; color: #0f766e; font-size: 14px; line-height: 1.2; }
-  .radar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
-  .radar-cell { background: #fff; border: 1px solid #dbe4ef; border-radius: 8px; padding: 10px; text-align: center; min-height: 72px; }
-  .radar-cell strong { display: block; color: #0f766e; font-size: 18px; margin-bottom: 4px; }
-  .radar-cell span { color: #64748b; font-size: 10px; line-height: 1.3; }
-  .funnel { display: grid; gap: 7px; margin-top: 8px; }
-  .funnel-step { height: 24px; border-radius: 6px; color: #fff; font-size: 10px; font-weight: bold; display: grid; place-items: center; margin: 0 auto; }
-  .portfolio-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
-  .portfolio-cell { border: 1px solid #dbe4ef; border-radius: 8px; padding: 10px; background: #fff; min-height: 72px; }
-  .portfolio-cell b { display: block; color: #0f172a; font-size: 11px; margin-bottom: 5px; }
-  .portfolio-cell span { color: #475569; font-size: 10.5px; line-height: 1.4; }
-  .rec-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
-  .rec-card h3 { font-size: 14px; color: #0d9488; margin-bottom: 6px; }
-  .badge { display: inline-block; background: #f0fdfa; border: 1px solid #99f6e4; color: #0d9488; padding: 1px 8px; border-radius: 9999px; font-size: 10px; font-weight: bold; margin-left: 8px; }
-  .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; text-align: center; }
-  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-`;
-
-
-function numericValue(value: string): number {
-    const parsed = Number(String(value || '').replace(/[^0-9.]/g, ''));
-    return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function qualitativeScore(value: string): number {
-    const normalized = value.toLowerCase();
-    if (normalized.includes('critical') || normalized.includes('high') || normalized.includes('mature') || normalized.includes('50%+')) return 90;
-    if (normalized.includes('medium') || normalized.includes('balanced') || normalized.includes('developing') || normalized.includes('25-50')) return 65;
-    if (normalized.includes('low') || normalized.includes('ad-hoc') || normalized.includes('flat') || normalized.includes('maybe')) return 40;
-    if (normalized.includes('none') || normalized.includes('declining') || normalized.includes('no')) return 25;
-    return 55;
-}
-
-function buildBusinessVisuals(form: BusinessProfileForm, recommendations: Array<{ name: string; score: number }>) {
-    const activeConsumers = numericValue(form.customers.activeConsumers);
-    const monthlyTransactions = numericValue(form.apis.monthlyTransactions);
-    const revenueTarget = numericValue(form.revenue.annualRevenueTarget);
-    const tech = qualitativeScore(form.technology.technicalReadiness);
-    const analytics = qualitativeScore(form.technology.dataInfrastructureMaturity);
-    const strategic = qualitativeScore(form.objectives.strategicImportance);
-    const customerGrowth = qualitativeScore(form.customers.consumerGrowthExpectation);
-    const apiValue = qualitativeScore(form.customers.perceivedBusinessValue);
-    const usageGrowth = qualitativeScore(form.apis.usageGrowth);
-    const readiness = Math.round((tech + analytics + strategic) / 3);
-    const growth = Math.round((customerGrowth + usageGrowth + apiValue) / 3);
-    const revenueFocus = qualitativeScore(form.revenue.adoptionVsRevenue === 'Revenue First' ? 'High' : form.revenue.adoptionVsRevenue === 'Balanced' ? 'Medium' : 'Low');
-    const monetizationComplexity = Math.round((qualitativeScore(form.business_model.competitiveLandscape) + revenueFocus + tech) / 3);
-    const topScores = recommendations.slice(0, 5).map((item, index) => `
-        <div class="chart-row"><span>${index === 0 ? 'Top: ' : ''}${item.name}</span><i class="chart-track"><b class="chart-fill" style="width:${item.score}%;background:${index === 0 ? '#0d9488' : '#2563eb'}"></b></i><strong>${item.score}%</strong></div>
-    `).join('');
-    return `
-  <div class="section">
-    <div class="section-title">Visual Business Snapshot</div>
-    <div class="metric-strip">
-      <div class="metric-tile"><span>Active Consumers</span><strong>${activeConsumers.toLocaleString() || '0'}</strong></div>
-      <div class="metric-tile"><span>Monthly Transactions</span><strong>${monthlyTransactions.toLocaleString() || '0'}</strong></div>
-      <div class="metric-tile"><span>Annual API Target</span><strong>$${revenueTarget.toLocaleString() || '0'}</strong></div>
-      <div class="metric-tile"><span>Top Strategy</span><strong>${recommendations[0]?.name || 'Pending'}</strong></div>
-    </div>
-    <div class="visual-grid" style="margin-top:14px">
-      <div class="visual-card">
-        <h3>Readiness Signals</h3>
-        <div class="chart-row"><span>Technical Readiness</span><i class="chart-track"><b class="chart-fill" style="width:${tech}%"></b></i><strong>${tech}%</strong></div>
-        <div class="chart-row"><span>Analytics Maturity</span><i class="chart-track"><b class="chart-fill" style="width:${analytics}%;background:#2563eb"></b></i><strong>${analytics}%</strong></div>
-        <div class="chart-row"><span>Strategic Importance</span><i class="chart-track"><b class="chart-fill" style="width:${strategic}%;background:#7c3aed"></b></i><strong>${strategic}%</strong></div>
-        <div class="chart-row"><span>Overall Readiness</span><i class="chart-track"><b class="chart-fill" style="width:${readiness}%;background:#16a34a"></b></i><strong>${readiness}%</strong></div>
-      </div>
-      <div class="visual-card">
-        <h3>Opportunity Signals</h3>
-        <div class="chart-row"><span>Customer Growth</span><i class="chart-track"><b class="chart-fill" style="width:${customerGrowth}%"></b></i><strong>${customerGrowth}%</strong></div>
-        <div class="chart-row"><span>API Value</span><i class="chart-track"><b class="chart-fill" style="width:${apiValue}%;background:#2563eb"></b></i><strong>${apiValue}%</strong></div>
-        <div class="chart-row"><span>Usage Growth</span><i class="chart-track"><b class="chart-fill" style="width:${usageGrowth}%;background:#7c3aed"></b></i><strong>${usageGrowth}%</strong></div>
-        <div class="chart-row"><span>Growth Potential</span><i class="chart-track"><b class="chart-fill" style="width:${growth}%;background:#16a34a"></b></i><strong>${growth}%</strong></div>
-      </div>
-    </div>
-    <div class="radar-grid">
-      <div class="radar-cell"><strong>${readiness}%</strong><span>Platform readiness</span></div>
-      <div class="radar-cell"><strong>${growth}%</strong><span>Market opportunity</span></div>
-      <div class="radar-cell"><strong>${monetizationComplexity}%</strong><span>Monetization complexity</span></div>
-    </div>
-    <div class="visual-grid">
-      <div class="visual-card">
-        <h3>API Monetization Funnel</h3>
-        <div class="funnel">
-          <div class="funnel-step" style="width:96%;background:#0d9488">API Inventory: ${form.apis.numberOfApis || 'N/A'} APIs</div>
-          <div class="funnel-step" style="width:82%;background:#2563eb">Usage Base: ${monthlyTransactions.toLocaleString() || '0'} transactions/month</div>
-          <div class="funnel-step" style="width:68%;background:#7c3aed">Target Customers: ${form.customers.apiConsumerType || 'Mixed'}</div>
-          <div class="funnel-step" style="width:54%;background:#d97706">Revenue Target: $${revenueTarget.toLocaleString() || '0'}</div>
-        </div>
-      </div>
-      <div class="visual-card">
-        <h3>Strategy Match Ranking</h3>
-        ${topScores || '<p style="color:#64748b;font-size:11px">No recommendation scores available yet.</p>'}
-      </div>
-    </div>
-    <div class="visual-card">
-      <h3>Operating Model Map</h3>
-      <div class="portfolio-grid">
-        <div class="portfolio-cell"><b>Access Model</b><span>${form.business_model.currentAccessModel || 'Not defined'} today, moving toward ${form.business_model.preferredChargingMethod || 'a monetized model'}.</span></div>
-        <div class="portfolio-cell"><b>Customer Motion</b><span>${form.customers.apiConsumerType || 'Mixed'} consumers with ${form.customers.consumerGrowthExpectation || 'unknown'} growth expectation.</span></div>
-        <div class="portfolio-cell"><b>Technology Base</b><span>${form.technology.apiGatewayProvider || 'No gateway'} with ${form.technology.technicalReadiness || 'unknown'} billing readiness.</span></div>
-        <div class="portfolio-cell"><b>Business Goal</b><span>${form.objectives.primaryBusinessGoal || 'Growth'} over a ${form.objectives.targetTimeHorizon || 'planned'} time horizon.</span></div>
-      </div>
-    </div>
-  </div>`;
-}
 function buildBusinessProfileSections(form: BusinessProfileForm, resolvedIndustry: string): [string, [string, string][]][] {
     return [
         ['Business Model', [
@@ -563,7 +427,6 @@ export default function BusinessDataPage() {
         setError('');
 
         try {
-            // Step 1: Get recommendations
             const recResponse = await fetch('/api/monetization/recommend-llm', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -574,140 +437,71 @@ export default function BusinessDataPage() {
 
             const recommendations: Array<{
                 id: string; name: string; description: string; score: number;
-                reasoning?: string; timeframe?: string; expectedRevenue?: string;
+                reasoning?: string; timeframe?: string; expectedRevenue?: string; revenueImpact?: string; timeline?: string;
                 implementation?: string; implementationSteps?: string[];
-                pros?: string[]; cons?: string[]; risks?: string[];
-                mitigations?: string[]; successMetrics?: string[];
+                pros?: string[]; cons?: string[]; risks?: string[]; mitigations?: string[]; riskSeverity?: string[];
+                successMetrics?: string[]; strategicFit?: StrategicFit; whyThisStrategy?: WhyThisStrategyItem[];
+                nextSteps?: NextStepItem[]; revisitTrigger?: string;
             }> = recData.recommendations || [];
+            const pricing: { tiers: Array<{ name: string; price: string; billingPeriod: string; includedUsage: string; overageRate: string; targetSegment: string }>; rationale?: string } | null = recData.pricing || null;
+            const roadmap: { phases: Array<{ name: string; duration: string; milestones: string[] }> } | null = recData.roadmap || null;
 
             const top = recommendations[0];
+            const others = recommendations.slice(1, 4);
+            const generatedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            const id = `MM-${new Date().getFullYear()}-${String((form.business_model.companyName || '').length * 211 % 10000).padStart(4, '0')}`;
 
-            // Step 2: Get AI narrative for top recommendation
-            let narrative: Record<string, string> | null = null;
-            if (top) {
-                const narRes = await fetch('/api/monetization/enhance-pdf', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        industry: resolvedIndustry,
-                        strategy_name: top.name,
-                        description: top.description,
-                        reasoning: top.reasoning || '',
-                        pros: top.pros || [],
-                        cons: top.cons || [],
-                        risks: top.risks || [],
-                        mitigations: top.mitigations || [],
-                        implementation_steps: top.implementationSteps || [],
-                        timeframe: top.timeframe || '',
-                        expected_revenue: top.expectedRevenue || '',
-                        success_metrics: top.successMetrics || [],
-                        score: top.score,
-                    }),
-                });
-                if (narRes.ok) narrative = await narRes.json();
-            }
-
-            // Step 3: Build the PDF
-            const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
             const profileSections = buildBusinessProfileSections(form, resolvedIndustry);
+            const profileSectionsHtml = profileSections.map(([title, rows]) => xrSectionTitled(title, xrInfoGrid(rows))).join('');
 
-            const profileSectionsHtml = profileSections.map(([title, rows]) => `
-                <div class="section">
-                    <div class="section-title">${title}</div>
-                    <div class="grid3">
-                        ${rows.map(([label, value]) => `<div class="info-box"><div class="label">${label}</div><div class="value">${value || '—'}</div></div>`).join('')}
+            const otherStrategiesHtml = others.map((r) => `
+                <div class="xr-why-card" style="break-inside:avoid;margin-bottom:10px;">
+                    <h4 style="font-size:13px;margin-bottom:6px;">${r.name} <span style="font-size:10.5px;color:#64748b;font-weight:normal">${r.score}% match</span></h4>
+                    <p style="margin-bottom:8px;">${r.description}</p>
+                    <div class="xr-two-col">
+                        <div>${xrList(r.pros)}</div>
+                        <div>${xrList(r.cons, 'cons')}</div>
                     </div>
-                </div>
-            `).join('');
-
-            const recSection = recommendations.map((r, i) => `
-                <div class="rec-card">
-                    <h3>${i === 0 ? '⭐ ' : ''}${r.name} <span class="badge">${r.score}% match</span></h3>
-                    <p style="font-size:11.5px;color:#334155;margin-bottom:8px">${r.description}</p>
-                    <div class="grid3" style="margin-bottom:8px">
-                        <div class="info-box"><div class="label">Timeframe</div><div class="value">${r.timeframe || '—'}</div></div>
-                        <div class="info-box"><div class="label">Expected Revenue</div><div class="value">${r.expectedRevenue || '—'}</div></div>
-                        <div class="info-box"><div class="label">Implementation</div><div class="value">${r.implementation || '—'}</div></div>
-                    </div>
-                    <div class="grid2">
-                        <div><div style="font-size:11px;font-weight:bold;color:#16a34a;margin-bottom:4px">Pros</div>
-                            <ul class="pros">${(r.pros || []).map(p => `<li>${p}</li>`).join('')}</ul></div>
-                        <div><div style="font-size:11px;font-weight:bold;color:#d97706;margin-bottom:4px">Considerations</div>
-                            <ul class="cons">${(r.cons || []).map(c => `<li>${c}</li>`).join('')}</ul></div>
-                    </div>
-                    ${r.implementationSteps?.length ? `<div style="margin-top:10px"><div style="font-size:11px;font-weight:bold;color:#0d9488;margin-bottom:4px">Implementation Steps</div>
-                        <ul class="steps-list">${r.implementationSteps.map(s => `<li>${s}</li>`).join('')}</ul></div>` : ''}
                 </div>`).join('');
 
             const pdfHtml = `
 <div class="page">
-  <div class="header">
-    <h1>Business Monetization Strategy Report</h1>
-    <div class="meta">${form.business_model.companyName} &nbsp;·&nbsp; Industry: ${resolvedIndustry} &nbsp;·&nbsp; Generated ${date}</div>
-  </div>
-
-  ${buildBusinessVisuals(form, recommendations)}
-
-  ${narrative?.executive_summary ? `
-  <div class="reason-box">
-    <div class="label">📋 Executive Summary</div>
-    <p>${narrative.executive_summary}</p>
-  </div>` : top?.reasoning ? `
-  <div class="reason-box">
-    <div class="label">💡 Top Recommendation Rationale</div>
-    <p>${top.reasoning}</p>
-  </div>` : ''}
-
-  <div class="section">
-    <div class="section-title">📋 Business Profile</div>
-  </div>
+  ${xrHeader({ industry: resolvedIndustry, generatedDate, reportId: id })}
+  ${xrBriefTitle('Business Monetization Report', [resolvedIndustry, form.business_model.companyName || 'Business Profile'])}
   ${profileSectionsHtml}
+  ${xrFooter('Page 1 of 3', generatedDate)}
+</div>
 
-  ${narrative?.strategic_fit_analysis ? `
-  <div class="section">
-    <div class="section-title">🎯 Strategic Fit Analysis</div>
-    <p style="font-size:12px;color:#334155;line-height:1.75">${narrative.strategic_fit_analysis}</p>
-  </div>` : ''}
+${top ? `
+<div class="page">
+  ${xrHeader({ industry: resolvedIndustry, generatedDate, reportId: id, rightTitle: 'Business Monetization Report — Recommendation', rightStrategy: top.name })}
+  ${xrHero({
+                name: top.name,
+                description: top.description,
+                confidence: top.score,
+                revenueLow: top.expectedRevenue || top.revenueImpact || '—',
+                revenueHigh: top.revenueImpact && top.revenueImpact !== top.expectedRevenue ? top.revenueImpact : '',
+                timeToValue: top.timeframe || top.timeline || '—',
+                complexity: (top.implementationSteps?.length || 0) <= 3 ? 'Low' : (top.implementationSteps?.length || 0) <= 6 ? 'Med' : 'High',
+                complexitySub: top.implementation || '',
+            })}
+  ${xrWhyThisStrategy(top.whyThisStrategy || [])}
+  ${top.strategicFit ? xrStrategicFit(top.strategicFit) : ''}
+  ${xrFooter('Page 2 of 3', generatedDate)}
+</div>
 
-  ${narrative?.business_impact ? `
-  <div class="section">
-    <div class="section-title">📈 Business Impact &amp; Revenue Outlook</div>
-    <p style="font-size:12px;color:#334155;line-height:1.75">${narrative.business_impact}</p>
-  </div>` : ''}
+<div class="page">
+  ${xrHeader({ industry: resolvedIndustry, generatedDate, reportId: id, rightTitle: 'Business Monetization Report — Execution Plan', rightStrategy: top.name })}
+  ${pricing?.tiers.length ? xrPricingTable(pricing.tiers, pricing.rationale) : ''}
+  ${roadmap?.phases.length ? xrRoadmap(roadmap.phases) : ''}
+  ${xrRisksAndNextSteps(top.risks || [], top.mitigations || [], top.riskSeverity || [], top.nextSteps || [])}
+  <div style="height:8px"></div>
+  ${xrAdvisoryNote(top.score, top.revisitTrigger || `Revisit this strategy if performance diverges meaningfully from the ${top.expectedRevenue || 'projected'} revenue target.`)}
+  ${others.length ? xrSectionTitled('Other Strategies Considered', otherStrategiesHtml) : ''}
+  ${xrFooter('Page 3 of 3', generatedDate)}
+</div>` : ''}`;
 
-  ${narrative?.market_opportunity ? `
-  <div class="section">
-    <div class="section-title">🌍 Market Opportunity</div>
-    <p style="font-size:12px;color:#334155;line-height:1.75">${narrative.market_opportunity}</p>
-  </div>` : ''}
-
-  <div class="section">
-    <div class="section-title">🏆 Recommended Monetization Strategies</div>
-    ${recSection}
-  </div>
-
-  ${narrative?.implementation_deep_dive ? `
-  <div class="section">
-    <div class="section-title">🗺️ Implementation Deep Dive</div>
-    <p style="font-size:12px;color:#334155;line-height:1.75">${narrative.implementation_deep_dive}</p>
-  </div>` : ''}
-
-  ${narrative?.risk_deep_dive ? `
-  <div class="section">
-    <div class="section-title">🚨 Risk Analysis &amp; Mitigation</div>
-    <p style="font-size:12px;color:#334155;line-height:1.75">${narrative.risk_deep_dive}</p>
-  </div>` : ''}
-
-  ${narrative?.recommended_next_steps ? `
-  <div class="section">
-    <div class="section-title">🚀 Recommended Next Steps (Next 30 Days)</div>
-    <p style="font-size:12px;color:#334155;line-height:1.75">${narrative.recommended_next_steps}</p>
-  </div>` : ''}
-
-  <div class="footer">MonetizeMate &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; Generated by AI — review with a qualified business strategist before implementation.</div>
-</div>`;
-
-            await downloadHtmlAsPdf(pdfHtml, BD_PDF_STYLES, `${(form.business_model.companyName || 'business').toLowerCase().replace(/\s+/g, '-')}-monetization-report.pdf`, 'business_data_pdf');
+            await downloadHtmlAsPdf(pdfHtml, EXEC_REPORT_STYLES, `${(form.business_model.companyName || 'business').toLowerCase().replace(/\s+/g, '-')}-monetization-report.pdf`, 'business_data_pdf');
 
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to generate report.');

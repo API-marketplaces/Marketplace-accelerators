@@ -19,6 +19,10 @@ import {
     Zap,
 } from 'lucide-react';
 import { downloadHtmlAsPdf } from '@/app/utils/pdf';
+import {
+    EXEC_REPORT_STYLES, xrHeader, xrBriefTitle, xrInfoGrid, xrSectionTitled, xrList, xrFooter,
+    type StrategicFit, type WhyThisStrategyItem, type NextStepItem,
+} from '@/app/utils/executiveReport';
 
 interface Strategy {
     id: string;
@@ -32,11 +36,16 @@ interface Strategy {
     cons: string[];
     risks?: string[];
     mitigations?: string[];
+    riskSeverity?: string[];
     successMetrics?: string[];
     timeline?: string;
     revenueImpact?: string;
     reasoning: string;
     score: number;
+    strategicFit?: StrategicFit;
+    whyThisStrategy?: WhyThisStrategyItem[];
+    nextSteps?: NextStepItem[];
+    revisitTrigger?: string;
 }
 
 interface Phase {
@@ -146,64 +155,55 @@ function buildCtaItems(strategy: Strategy): string[] {
         : DEFAULT_CTA_ITEMS;
 }
 
-const IMPLEMENTATION_PDF_STYLES = `
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1a202c; padding: 40px 48px; background: #fff; }
-    h1 { font-size: 22px; color: #0d9488; margin-bottom: 6px; }
-    h2 { font-size: 15px; color: #0f172a; border-left: 4px solid #0d9488; padding-left: 10px; margin: 26px 0 12px; }
-    h3 { font-size: 13px; color: #0f172a; margin-bottom: 6px; }
-    .dur { font-size: 10px; font-weight: normal; color: #64748b; }
-    p.desc { color: #475569; margin-bottom: 14px; line-height: 1.5; }
-    .badge { display: inline-block; background: #f0fdfa; border: 1px solid #99f6e4; color: #0d9488; padding: 2px 10px; border-radius: 9999px; font-size: 11px; margin-right: 8px; }
-    .phase { margin-bottom: 16px; break-inside: avoid; }
-    ul { list-style: none; padding: 0; }
-    li { padding: 3px 0 3px 16px; position: relative; font-size: 11.5px; line-height: 1.5; }
-    li::before { content: "•"; position: absolute; left: 0; color: #0d9488; font-weight: bold; }
-`;
+function buildImplementationPdfHtml(strategy: Strategy, industry: string, phases: Phase[], prerequisites: { risk?: string; action: string }[], ctaItems: string[]): string {
+    const generatedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const id = `MM-${new Date().getFullYear()}-${String(Array.from(strategy.id).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) % 10000, 3)).padStart(4, '0')}`;
 
-function buildImplementationPdfHtml(strategy: Strategy, phases: Phase[], prerequisites: { risk?: string; action: string }[], ctaItems: string[]): string {
-    const esc = (s: string) => s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const phasesHtml = phases.map((phase) => `
-        <div class="phase">
-            <h3>${esc(phase.name)} <span class="dur">${esc(phase.duration)}</span></h3>
-            <ul>${phase.tasks.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
-        </div>
-    `).join('');
+        <div class="xr-roadmap-step">
+          <div class="row"><h4>${phase.name}</h4><span class="when">${phase.duration}</span></div>
+          <ul>${phase.tasks.map((t) => `<li>${t}</li>`).join('')}</ul>
+        </div>`).join('');
 
     const prereqHtml = prerequisites.map((p) => `
-        <li>${p.risk ? `<strong>Risk:</strong> ${esc(p.risk)} — ` : ''}${esc(p.action)}</li>
-    `).join('');
-
-    const ctaHtml = ctaItems.map((c) => `<li>${esc(c)}</li>`).join('');
+        <div class="xr-risk-card">
+          <div class="row"><h4>${p.risk || 'Readiness item'}</h4></div>
+          <p>${p.action}</p>
+        </div>`).join('');
 
     return `
-        <h1>${esc(strategy.name)} — Implementation Plan</h1>
-        <p class="desc">${esc(strategy.description)}</p>
-        <div>
-            <span class="badge">Timeframe: ${esc(strategy.timeframe)}</span>
-            <span class="badge">Revenue: ${esc(strategy.expectedRevenue)}</span>
-            <span class="badge">Difficulty: ${esc(strategy.implementation)}</span>
-        </div>
+<div class="page">
+  ${xrHeader({ industry, generatedDate, reportId: id })}
+  ${xrBriefTitle(`${strategy.name} — Implementation Plan`, [`${strategy.score}% match`, strategy.timeframe || ''])}
+  ${xrInfoGrid([
+        ['Timeframe', strategy.timeframe],
+        ['Expected Revenue', strategy.expectedRevenue],
+        ['Difficulty', strategy.implementation],
+    ])}
+  <div style="height:8px"></div>
 
-        <h2>Optimal Delivery Strategy</h2>
-        <p class="desc"><strong>Recommended rollout timeline:</strong> ${esc(strategy.timeline || strategy.timeframe)}</p>
-        <p class="desc"><strong>Expected revenue impact:</strong> ${esc(strategy.revenueImpact || strategy.expectedRevenue)}</p>
-        <p class="desc">${esc(strategy.reasoning)}</p>
+  ${xrSectionTitled('Optimal Delivery Strategy', `
+    <div class="xr-info-grid" style="margin-bottom:10px;">
+      <div class="xr-info-tile"><div class="k">Recommended Timeline</div><div class="v">${strategy.timeline || strategy.timeframe}</div></div>
+      <div class="xr-info-tile"><div class="k">Expected Revenue Impact</div><div class="v">${strategy.revenueImpact || strategy.expectedRevenue}</div></div>
+      <div class="xr-info-tile"></div>
+    </div>
+    <p style="font-size:11.5px;color:#475569;line-height:1.6;">${strategy.reasoning}</p>
+  `)}
 
-        <h2>Prerequisites</h2>
-        <ul>${prereqHtml}</ul>
+  ${xrSectionTitled('Prerequisites', prereqHtml)}
 
-        <h2>Phased Implementation</h2>
-        ${phasesHtml}
+  ${xrSectionTitled('Phased Implementation', phasesHtml)}
 
-        <h2>Call-to-Action Strategies</h2>
-        <ul>${ctaHtml}</ul>
-    `;
+  ${xrSectionTitled('Call-to-Action Strategies', xrList(ctaItems))}
+
+  ${xrFooter('Implementation Plan', generatedDate)}
+</div>`;
 }
 
-async function downloadImplementationPlan(strategy: Strategy, phases: Phase[], prerequisites: { risk?: string; action: string }[], ctaItems: string[]) {
-    const html = buildImplementationPdfHtml(strategy, phases, prerequisites, ctaItems);
-    await downloadHtmlAsPdf(html, IMPLEMENTATION_PDF_STYLES, `${strategy.name.toLowerCase().replace(/\s+/g, '-')}-implementation-plan.pdf`, 'implementation_plan_pdf');
+async function downloadImplementationPlan(strategy: Strategy, industry: string, phases: Phase[], prerequisites: { risk?: string; action: string }[], ctaItems: string[]) {
+    const html = buildImplementationPdfHtml(strategy, industry, phases, prerequisites, ctaItems);
+    await downloadHtmlAsPdf(html, EXEC_REPORT_STYLES, `${strategy.name.toLowerCase().replace(/\s+/g, '-')}-implementation-plan.pdf`, 'implementation_plan_pdf');
 }
 
 function ImplementationPageInner() {
@@ -235,6 +235,7 @@ function ImplementationPageInner() {
         );
     }
 
+    const industry = searchParams.get('selectedIndustry') || '';
     const phases = buildPhases(strategy);
     const prerequisites = buildPrerequisites(strategy);
     const ctaItems = buildCtaItems(strategy);
@@ -368,7 +369,7 @@ function ImplementationPageInner() {
                         onClick={async () => {
                             setDownloadingPlan(true);
                             try {
-                                await downloadImplementationPlan(strategy, phases, prerequisites, ctaItems);
+                                await downloadImplementationPlan(strategy, industry, phases, prerequisites, ctaItems);
                             } finally {
                                 setDownloadingPlan(false);
                             }
