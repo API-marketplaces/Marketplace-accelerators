@@ -96,8 +96,7 @@ export default function DashboardPage() {
           {FEATURES.map((feature) => {
             const Icon = feature.icon
             const cardContent = (
-              <div className="feature-card-inner">
-                {feature.comingSoon && <span className="coming-soon-badge">Coming Soon</span>}
+              <div className="feature-tile-inner">
                 <div className="feature-top">
                   <div className="feature-icon">
                     <Icon aria-hidden="true" />
@@ -205,15 +204,13 @@ export default function DashboardPage() {
           border-radius: 20px;
           overflow: hidden;
           background:
-            radial-gradient(circle at 13% 10%, rgba(124, 255, 229, 0.18), transparent 26%),
-            radial-gradient(circle at 82% 86%, rgba(0, 229, 192, 0.16), transparent 34%),
-            linear-gradient(145deg, rgba(48, 61, 78, 0.9) 0%, rgba(20, 38, 54, 0.96) 45%, rgba(13, 31, 44, 0.98) 100%);
-          border: 1px solid rgba(103, 188, 178, 0.48);
-          box-shadow:
-            0 22px 68px rgba(0, 0, 0, 0.28),
-            0 0 0 1px rgba(0, 229, 192, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.13),
-            inset 0 -86px 100px rgba(4, 24, 35, 0.24);
+            radial-gradient(circle at 13% 10%, rgba(124, 255, 229, 0.12), transparent 30%),
+            radial-gradient(circle at 82% 86%, rgba(0, 229, 192, 0.1), transparent 36%),
+            rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          backdrop-filter: blur(22px) saturate(160%);
+          -webkit-backdrop-filter: blur(22px) saturate(160%);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
           transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
         }
 
@@ -222,8 +219,8 @@ export default function DashboardPage() {
           position: absolute;
           inset: 0;
           background:
-            linear-gradient(115deg, rgba(255,255,255,0.13), transparent 28%),
-            linear-gradient(180deg, rgba(236, 253, 245, 0.05), transparent 58%);
+            linear-gradient(115deg, rgba(255,255,255,0.1), transparent 28%),
+            linear-gradient(180deg, rgba(236, 253, 245, 0.04), transparent 58%);
           opacity: 0.9;
           pointer-events: none;
         }
@@ -238,13 +235,9 @@ export default function DashboardPage() {
         }
 
         .feature-card:hover {
-          transform: translateY(-5px);
-          border-color: rgba(118, 240, 219, 0.72);
-          box-shadow:
-            0 30px 88px rgba(0, 229, 192, 0.18),
-            0 0 0 1px rgba(110, 231, 183, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.22),
-            inset 0 -80px 90px rgba(3, 30, 24, 0.2);
+          transform: translateY(-6px);
+          border-color: rgba(143, 252, 240, 0.4);
+          box-shadow: 0 16px 40px rgba(0, 229, 192, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .feature-card-disabled {
@@ -255,15 +248,11 @@ export default function DashboardPage() {
 
         .feature-card-disabled:hover {
           transform: none;
-          border-color: rgba(103, 188, 178, 0.48);
-          box-shadow:
-            0 22px 68px rgba(0, 0, 0, 0.28),
-            0 0 0 1px rgba(0, 229, 192, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.13),
-            inset 0 -86px 100px rgba(4, 24, 35, 0.24);
+          border-color: rgba(255, 255, 255, 0.14);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
-        .feature-card-inner {
+        .feature-tile-inner {
           position: relative;
           z-index: 1;
           flex: 1;
@@ -275,25 +264,6 @@ export default function DashboardPage() {
           flex-direction: column;
           justify-content: space-between;
           gap: 24px;
-        }
-
-        .coming-soon-badge {
-          position: absolute;
-          top: 18px;
-          right: 18px;
-          z-index: 2;
-          min-height: 28px;
-          display: inline-flex;
-          align-items: center;
-          padding: 5px 12px;
-          border-radius: 999px;
-          border: 1px solid rgba(251, 191, 36, 0.48);
-          background: rgba(251, 191, 36, 0.16);
-          color: #fde68a;
-          font-size: 11px;
-          font-weight: 900;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
         }
 
         .feature-top {
@@ -440,10 +410,11 @@ export default function DashboardPage() {
           padding: 42px 42px 36px;
           text-align: center;
           border-radius: 20px;
-          border: 1px solid rgba(0, 229, 192, 0.14);
-          background: rgba(255, 255, 255, 0.035);
-          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
-          backdrop-filter: blur(18px);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(22px) saturate(160%);
+          -webkit-backdrop-filter: blur(22px) saturate(160%);
         }
 
         .welcome-panel h2 {
@@ -530,7 +501,7 @@ export default function DashboardPage() {
             grid-template-columns: 1fr;
           }
           .feature-card,
-          .feature-card-inner {
+          .feature-tile-inner {
             min-height: 260px;
           }
         }
@@ -548,7 +519,7 @@ export default function DashboardPage() {
           .dashboard-heading h1 {
             font-size: 28px;
           }
-          .feature-card-inner {
+          .feature-tile-inner {
             padding: 26px;
           }
 

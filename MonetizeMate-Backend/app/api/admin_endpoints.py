@@ -266,6 +266,16 @@ def _feature_metrics(users: list[Audience], activities: list[AdminActivity], fil
     ]
 
 
+def _isoformat_utc(value: datetime | None) -> str | None:
+    """created_at columns are stored as naive UTC (datetime.utcnow()). Without an
+    explicit 'Z'/offset, browsers parse the ISO string as local time instead of
+    UTC, which silently shifts every timestamp shown in the UI. Appending 'Z'
+    marks it as UTC so `new Date(...)` on the frontend converts it correctly."""
+    if value is None:
+        return None
+    return value.isoformat() + "Z"
+
+
 def _serialize_activity(activity: AdminActivity) -> dict:
     return {
         "id": activity.id,
@@ -275,7 +285,7 @@ def _serialize_activity(activity: AdminActivity) -> dict:
         "use_case": activity.use_case,
         "strategy": activity.strategy,
         "source": activity.source,
-        "created_at": activity.created_at.isoformat() if activity.created_at else None,
+        "created_at": _isoformat_utc(activity.created_at),
         "user": {
             "id": activity.audience.id,
             "name": activity.audience.name,
@@ -382,8 +392,79 @@ def get_admin_insights(
         "feature_metrics": feature_metrics,
         "activity_timeline": [daily_activity[key] for key in sorted(daily_activity.keys())],
         "ai_use_cases": sorted(use_case_groups.values(), key=lambda item: item["customer_count"], reverse=True),
-        "recent_activity": [_serialize_activity(activity) for activity in activities[:12]],
+        "recent_activity": [_serialize_activity(activity) for activity in activities[:5]],
     }
+
+
+@router.get("/admin/users/export")
+def export_users(
+    db: Session = Depends(get_db),
+    _: AudienceResponse = Depends(get_current_admin_user),
+):
+    """Full user roster with account details and feature usage, for the admin CSV export.
+    Unlike /admin/insights (which caps recent_activity at 5 for the dashboard widget),
+    this covers every non-admin user regardless of whether they've done anything yet."""
+    users = db.query(Audience).all()
+    non_admin_users = [user for user in users if not bool(user.is_admin)]
+    all_activities = db.query(AdminActivity).order_by(AdminActivity.created_at.desc()).all()
+    all_files = db.query(File).all()
+
+    activities_by_user: dict[int, list[AdminActivity]] = defaultdict(list)
+    for activity in all_activities:
+        if activity.audience_id is not None:
+            activities_by_user[activity.audience_id].append(activity)
+
+    files_by_user: dict[int, list[File]] = defaultdict(list)
+    for file in all_files:
+        files_by_user[file.audience_id].append(file)
+
+    rows = []
+    for user in non_admin_users:
+        user_activities = activities_by_user.get(user.id, [])
+        user_files = files_by_user.get(user.id, [])
+        assessments_completed = sum(1 for item in user_activities if item.activity_type == "recommendation_generated")
+        reports_downloaded = sum(1 for item in user_activities if item.activity_type == REPORT_DOWNLOAD_ACTIVITY_TYPE)
+        features_used = []
+        if assessments_completed:
+            features_used.append("Strategy Advisor")
+        if any(_safe_value(f.decision_metrics, "").lower() == "analytics" for f in user_files):
+            features_used.append("Analytics Workbench")
+        if any(_safe_value(f.decision_metrics, "").lower() == "prediction" for f in user_files):
+            features_used.append("Prediction Models")
+        if any(_safe_value(f.decision_metrics, "").lower() == "strategy" for f in user_files):
+            features_used.append("AI Monetization Plugin")
+        last_activity = max(
+            (item.created_at for item in user_activities if item.created_at),
+            default=None,
+        )
+
+        rows.append({
+            "id": user.id,
+            "name": _safe_value(user.name, ""),
+            "email": user.email or "",
+            "company_name": _safe_value(user.company_name, ""),
+            "job_title": _safe_value(user.job_title, ""),
+            "department": _safe_value(user.department, ""),
+            "country": _safe_value(user.country, ""),
+            "industry": _safe_value(user.industry, ""),
+            "company_size": _safe_value(user.company_size, ""),
+            "annual_revenue": _safe_value(user.annual_revenue, ""),
+            "api_maturity": _safe_value(user.api_maturity, ""),
+            "primary_objectives": ", ".join(_parse_objectives(user.primary_objectives)),
+            "api_gateway": _safe_value(user.api_gateway, ""),
+            "apis_managed": _safe_value(user.apis_managed, ""),
+            "team_size": _safe_value(user.team_size, ""),
+            "persona": _persona_for_user(user),
+            "preferred_pricing_model": _preferred_pricing_model(user),
+            "monetization_readiness_score": _readiness_score(user),
+            "features_used": ", ".join(features_used) if features_used else "None yet",
+            "assessments_completed": assessments_completed,
+            "reports_downloaded": reports_downloaded,
+            "files_uploaded": len(user_files),
+            "last_activity_at": _isoformat_utc(last_activity),
+        })
+
+    return {"users": rows, "total": len(rows)}
 
 
 def _persona_for_industry(industry: str, count: int) -> str:

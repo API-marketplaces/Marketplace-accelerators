@@ -518,7 +518,7 @@ ${top ? `
         return (
             <LoadingAnalysis
                 title="Analysing Your Business Profile"
-                description={`Groq AI is reviewing your ${submittedIndustry} business data and identifying the best monetization strategies...`}
+                description={`Monetize Mate is reviewing your ${submittedIndustry} business data and identifying the best monetization strategies...`}
                 steps={
                     <GeneratingRecommendationsSteps
                         analysisSource="manual"
@@ -536,7 +536,7 @@ ${top ? `
         return (
             <LoadingAnalysis
                 title="Generating Strategy Recommendations"
-                description={`Groq AI is building personalised monetisation recommendations for your ${submittedIndustry} business...`}
+                description={`Monetize Mate is building personalized monetization recommendations for your ${submittedIndustry} business...`}
                 steps={
                     <GeneratingRecommendationsSteps
                         analysisSource="manual"
@@ -1109,3 +1109,4 @@ ${top ? `
         </div>
     );
 }
+

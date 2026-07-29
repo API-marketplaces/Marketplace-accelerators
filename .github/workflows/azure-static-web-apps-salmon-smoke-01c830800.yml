@@ -6,12 +6,13 @@ on:
       - 19052026_latest_code
     paths:
       - 'MonetizeMate-Frontend/**'
-      - '.github/workflows/azure-webapp-monetizemate.yml'
+      - '.github/workflows/azure-static-web-apps-salmon-smoke-01c830800.yml'
+  workflow_dispatch:
 
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
-    name: Build and Deploy
+    name: Build and Deploy Frontend
 
     steps:
       - name: Checkout Repository
@@ -21,10 +22,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: MonetizeMate-Frontend/package-lock.json
 
       - name: Install Dependencies
         working-directory: MonetizeMate-Frontend
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       - name: Build Next App
         working-directory: MonetizeMate-Frontend
@@ -36,10 +39,36 @@ jobs:
           NEXT_PUBLIC_APP_NAME: "MonetizeMate"
         run: npm run build
 
+      - name: Prepare Standalone Artifact
+        working-directory: MonetizeMate-Frontend
+        run: |
+          rm -rf deploy
+          mkdir -p deploy/.next
+          cp -R .next/standalone/. deploy/
+          cp -R .next/static deploy/.next/static
+          if [ -d public ]; then cp -R public deploy/public; fi
+          cat > deploy/.deployment <<'DEPLOY'
+          [config]
+          SCM_DO_BUILD_DURING_DEPLOYMENT=false
+          DEPLOY
+          cat > deploy/package.json <<'JSON'
+          {
+            "name": "monetize-mate-webapp",
+            "private": true,
+            "scripts": {
+              "start": "node server.js"
+            },
+            "engines": {
+              "node": "22.x"
+            }
+          }
+          JSON
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: "Monetizemate"
           slot-name: "production"
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: MonetizeMate-Frontend
+          package: MonetizeMate-Frontend/deploy
+

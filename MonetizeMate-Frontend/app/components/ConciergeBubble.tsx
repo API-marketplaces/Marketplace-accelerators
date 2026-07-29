@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Bot, ChevronDown, HelpCircle, MessageSquare, Paperclip, Send, X } from "lucide-react";
+import { Bot, ChevronDown, MessageSquare, Paperclip, Send, X } from "lucide-react";
 import { useAuth } from "@/app/hooks/useAuth";
 
 interface Message {
@@ -32,34 +32,72 @@ const APPLICATIONS = [
 function answerFromLocalKnowledge(question: string): string | null {
   const text = question.toLowerCase();
 
+  // Identity
+  if (text.includes("who are you") || text.includes("what are you") || text.includes("your name") || text.includes("about vessa")) {
+    return "I'm Vessa, your AI help assistant for MonetizeMate 👋 I can walk you through every feature, help with your account (sign up, sign in, forgot password), and answer questions about API monetization. What would you like help with?";
+  }
+
+  // Sign up / create account
+  if (text.includes("sign up") || text.includes("signup") || text.includes("create account") || text.includes("create an account") || text.includes("register")) {
+    return "To create an account:\n1. Go to the Sign Up page.\n2. Enter your name, email, and password.\n3. Fill in a few details about your company - industry, size, revenue range, API maturity, and goals.\n4. Submit the form, then sign in from the Login page.\n\nThese details help tailor your monetization recommendations later.";
+  }
+
+  // Login / sign in
+  if (text.includes("log in") || text.includes("login") || text.includes("sign in") || text.includes("signin")) {
+    return "To sign in, go to the Login page and enter your email and password. Check 'Remember me' to stay signed in longer. If you don't have an account yet, use the Sign Up link on the same page.\n\nThere's also a separate 'Admin Login' for MonetizeMate staff/admin accounts - regular users should use the normal Login page.";
+  }
+
+  // Forgot / reset password
+  if (
+    text.includes("forgot") ||
+    text.includes("reset password") ||
+    text.includes("reset my password") ||
+    text.includes("change password") ||
+    text.includes("can't log in") ||
+    text.includes("cannot log in") ||
+    text.includes("cant log in")
+  ) {
+    return "To reset your password:\n1. On the Login page, click 'Forgot password?'\n2. Enter your email and click 'Send Reset Link'.\n3. Open the reset link from your email - it takes you back to the Login page with a reset form.\n4. Enter and confirm your new password, then click 'Update Password'.\n\nYou can then sign in with your new password.";
+  }
+
   // Getting Started
-  if (text.includes("get started") || text.includes("getting started") || text.includes("first time") || text.includes("new")) {
-    return "Welcome to MonetizeMate! Start with the Monetization Strategy Advisor to answer questions about your business and generate personalized API monetization recommendations. The dashboard currently focuses on strategy recommendations while the analytics and gateway features are paused.";
+  if (text.includes("get started") || text.includes("getting started") || text.includes("first time") || text.includes("new here") || text.includes("new to")) {
+    return "Here's how to get started with MonetizeMate:\n1. Create an account on the Sign Up page (or sign in if you already have one).\n2. You'll land on the Dashboard - your home base for every feature.\n3. Open the Monetization Strategy Advisor and choose 'Answer Questionnaire'.\n4. Pick your industry and answer a short set of AI-generated questions about your business.\n5. Get a personalized monetization recommendation report you can download as a PDF.\n\nAnalytics Workbench and the AI Monetization Plugin are marked Coming Soon on the dashboard.";
   }
 
   // Features Overview
   if (text.includes("features") || text.includes("what can i do") || text.includes("what can you help")) {
-    return "MonetizeMate currently has one active feature:\n\nMonetization Strategy Advisor - Answer questions about your business and get personalized monetization strategy recommendations.\n\nAnalytics Workbench and AI Monetization Plugin are temporarily paused in the application.";
+    return "MonetizeMate's dashboard has three features:\n\n✅ Monetization Strategy Advisor - active now. Answer a questionnaire about your business and get a personalized monetization recommendation.\n\n🔜 Analytics Workbench - Coming Soon (API usage, performance, and client insights).\n\n🔜 AI Monetization Plugin - Coming Soon (connect API gateways and configure monetization controls).\n\nAsk me about any of these, or about signing up, logging in, or resetting your password.";
   }
 
   // Dashboard
   if (text.includes("dashboard")) {
-    return "The Dashboard is your starting point. It currently shows quick access to Get Strategy Recommendations through the Monetization Strategy Advisor.";
+    return "The Dashboard is your home base after signing in. The 'Welcome to MonetizeMate' panel shows your 3-step path (Get Strategy Recommendations, plus two upcoming features), and the Features grid below links to the Monetization Strategy Advisor, Analytics Workbench, and AI Monetization Plugin.";
   }
 
   // Analytics Workbench
-  if (text.includes("analytics") || text.includes("workbench") || text.includes("performance") || text.includes("api stats") || text.includes("usage")) {
-    return "Analytics Workbench is temporarily paused in the application. For now, use the Monetization Strategy Advisor to generate API monetization recommendations.";
+  if (text.includes("analytics") || text.includes("workbench") || text.includes("performance") || text.includes("api stats")) {
+    return "Analytics Workbench is marked Coming Soon on the dashboard - it will cover API usage, performance patterns, customer behavior, and operational insights. For now, use the Monetization Strategy Advisor to get monetization recommendations.";
   }
 
-  // Strategy Advisor
-  if (text.includes("strategy") || text.includes("recommendation") || text.includes("advisor")) {
-    return "The Monetization Strategy Advisor helps you:\n- Answer questions about your business goals and constraints\n- Get personalized monetization strategy recommendations\n- Understand different approaches to API monetization\n- Develop a strategy tailored to your needs\n\nSimply answer the questionnaire and receive customized recommendations for your situation.";
+  // Strategy Advisor overview
+  if (text.includes("strategy advisor") || text.includes("strategy adviser") || (text.includes("strategy") && !text.includes("questionnaire"))) {
+    return "The Monetization Strategy Advisor has 3 ways to get recommendations:\n\n✅ Answer Questionnaire (Recommended, active now) - pick your industry and answer AI-generated questions to get a personalized recommendation.\n\n🔜 Business Data - build a reusable business profile (Coming Soon).\n\n🔜 AI Chat Advisor - a conversational discovery flow (Coming Soon).\n\nAsk me 'how does the questionnaire work' for the step-by-step.";
+  }
+
+  // Questionnaire flow detail
+  if (text.includes("questionnaire") || text.includes("answer questions") || text.includes("industry selection")) {
+    return "The Answer Questionnaire flow:\n1. From the Strategy Advisor, click 'Answer Questions'.\n2. Select your industry from the list and continue.\n3. Answer a series of AI-generated questions about your business, one at a time (about 10 questions).\n4. MonetizeMate analyzes your answers and generates a recommendation.\n5. Review your recommendation report and download it as a PDF.";
+  }
+
+  // Recommendation report
+  if (text.includes("recommendation report") || text.includes("pdf") || text.includes("download report") || text.includes("executive report") || text.includes("get monetization recommendation")) {
+    return "After you complete the questionnaire, MonetizeMate generates a recommendation report: your recommended pricing model, the reasoning behind it, a pricing/roadmap breakdown, risks, and next steps. You can download the full report as a PDF from the recommendation page.";
   }
 
   // AI Monetization Plugin
-  if (text.includes("plugin") || text.includes("gateway") || text.includes("connect") || text.includes("monetization plugin")) {
-    return "AI Monetization Plugin is temporarily paused in the application. For now, use the Monetization Strategy Advisor for API monetization planning.";
+  if (text.includes("plugin") || text.includes("gateway") || text.includes("monetization plugin")) {
+    return "AI Monetization Plugin is marked Coming Soon on the dashboard - it will let you connect API gateways and configure monetization controls for pricing, policies, and packaging. For now, use the Monetization Strategy Advisor for API monetization planning.";
   }
 
   // Pricing Models
@@ -69,17 +107,12 @@ function answerFromLocalKnowledge(question: string): string | null {
 
   // Prediction Model
   if (text.includes("prediction") || text.includes("forecast") || text.includes("growth") || text.includes("predict")) {
-    return "Prediction and growth tools are temporarily paused. The active workflow is the Monetization Strategy Advisor, which helps you choose a monetization model and next steps.";
+    return "Prediction and growth forecasting tools are marked Coming Soon. The active workflow is the Monetization Strategy Advisor, which helps you choose a monetization model and next steps today.";
   }
 
   // Upload/Data
-  if (text.includes("upload") || text.includes("file") || text.includes("data") || text.includes("import")) {
-    return "API data import and gateway connection workflows are temporarily paused. You can still use the Strategy Advisor to create recommendations from business inputs.";
-  }
-
-  // How to use features
-  if (text.includes("how do i") || text.includes("how to") || text.includes("how can i")) {
-    return "The active workflow is GET STRATEGY RECOMMENDATIONS: answer questions about your business in the Strategy Advisor and receive a personalized monetization strategy.";
+  if (text.includes("upload") || text.includes("import data")) {
+    return "API data import and gateway connection workflows are part of the upcoming Analytics Workbench and AI Monetization Plugin, both marked Coming Soon. You can still use the Strategy Advisor to create recommendations from business inputs today.";
   }
 
   // Terminology
@@ -99,14 +132,19 @@ function answerFromLocalKnowledge(question: string): string | null {
     return "I can explain many terms! Ask about specific concepts like 'pricing models', 'endpoints', 'clients', or 'usage'.";
   }
 
+  // How to use features (generic fallback, kept last so specific topics above match first)
+  if (text.includes("how do i") || text.includes("how to") || text.includes("how can i")) {
+    return "Tell me a bit more - are you asking about signing up, logging in, resetting your password, or using the Monetization Strategy Advisor? I can walk you through any of those step by step.";
+  }
+
   // Support
   if (text.includes("support") || text.includes("human") || text.includes("contact") || text.includes("help")) {
     return "I can help connect you with the support team. Switch to the 'Leave a message' tab, fill out your email and details, and the team will follow up soon.";
   }
 
-  // Default helpful response
+  // Default greeting
   if (text.includes("hi") || text.includes("hello") || text.includes("hey")) {
-    return "Hi there! I'm MateAI, your MonetizeMate assistant. I can help you get started with the Monetization Strategy Advisor and answer questions about API monetization strategy. What would you like to know?";
+    return "Hi there! I'm Vessa, your AI help assistant for MonetizeMate 👋 I can help with getting started, any feature, or your account (sign up, sign in, forgot password). What would you like to know?";
   }
 
   return null;
@@ -119,7 +157,7 @@ export default function ConciergeBubble({ fileId }: ConciergeBubbleProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hi! I'm MateAI 👋 Ask me anything about MonetizeMate - I can help you get started, use the Strategy Advisor and answer questions about API monetization strategy.",
+      content: "Hi! I'm Vessa 👋 Your AI help assistant for MonetizeMate. Ask me anything - getting started, any feature, or your account (sign up, sign in, forgot password).",
     },
   ]);
   const [input, setInput] = useState("");
@@ -248,7 +286,7 @@ export default function ConciergeBubble({ fileId }: ConciergeBubbleProps) {
   return (
     <div className="global-help">
       {open && (
-        <section className="global-help-panel" aria-label="MateAI Assistant">
+        <section className="global-help-panel" aria-label="Vessa Assistant">
           <header className="global-help-header">
             <button
               type="button"
@@ -319,7 +357,7 @@ export default function ConciergeBubble({ fileId }: ConciergeBubbleProps) {
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
                   onKeyDown={(event) => event.key === "Enter" && sendMessage()}
-                  placeholder="Ask MateAI anything..."
+                  placeholder="Ask Vessa anything..."
                   disabled={loading}
                 />
                 <button type="button" onClick={() => sendMessage()} disabled={loading || !input.trim()} aria-label="Send">
@@ -383,9 +421,28 @@ export default function ConciergeBubble({ fileId }: ConciergeBubbleProps) {
         </section>
       )}
 
-      <button type="button" className="global-help-button" onClick={() => setOpen((current) => !current)}>
-        {open ? <X aria-hidden="true" /> : <HelpCircle aria-hidden="true" />}
-        <span>MateAI</span>
+      <button
+        type="button"
+        className={open ? "global-help-button global-help-button-open" : "global-help-button"}
+        onClick={() => setOpen((current) => !current)}
+        aria-label={open ? "Close Vessa" : "Open Vessa, your AI help assistant"}
+      >
+        {open ? (
+          <X aria-hidden="true" />
+        ) : (
+          <>
+            <span className="global-help-avatar-wrap">
+              <Bot aria-hidden="true" />
+              <span className="global-help-badge">
+                <MessageSquare aria-hidden="true" />
+              </span>
+            </span>
+            <span className="global-help-button-text">
+              <span className="global-help-button-line1">Need help?</span>
+              <span className="global-help-button-line2">Let&apos;s chat</span>
+            </span>
+          </>
+        )}
       </button>
     </div>
   );

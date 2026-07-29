@@ -164,7 +164,7 @@ function ConciergePageInner() {
               </div>
               <div>
                 <h1 className="text-white font-semibold text-lg leading-none">AI Concierge</h1>
-                <p className="text-blue-300 text-xs mt-0.5">Powered by Groq Llama 3</p>
+                <p className="text-blue-300 text-xs mt-0.5">Powered by Monetize Mate AI</p>
               </div>
             </div>
           </div>

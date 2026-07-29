@@ -190,7 +190,7 @@ function LoginContent() {
         )}
 
         <Card className="signin-card">
-          <div className="card-heading">
+          <div className="signin-heading">
             <h2>{mode === 'login' ? 'Welcome Back' : 'Reset Password'}</h2>
             <p>{mode === 'login' ? 'Sign in to continue to MonetizeMate' : resetToken ? 'Create a new password for your account' : 'Send a secure reset link to your email'}</p>
           </div>
@@ -580,12 +580,12 @@ function LoginContent() {
           backdrop-filter: blur(22px);
         }
 
-        .card-heading {
+        .signin-heading {
           margin-bottom: 28px;
           text-align: left;
         }
 
-        .card-heading h2 {
+        .signin-heading h2 {
           margin: 0 0 8px;
           color: #ffffff;
           font-size: 27px;
@@ -593,7 +593,7 @@ function LoginContent() {
           font-weight: 900;
         }
 
-        .card-heading p {
+        .signin-heading p {
           margin: 0;
           color: rgba(255, 255, 255, 0.52);
           font-size: 14px;

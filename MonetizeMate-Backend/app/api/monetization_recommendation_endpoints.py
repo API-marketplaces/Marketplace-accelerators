@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+import re
 from app.crud import files as crud_files
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
@@ -17,6 +18,27 @@ router = APIRouter()
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 STRATEGY_CHAT_MODEL = "openai/gpt-oss-120b"
+
+
+def _groq_retry_after_seconds(response) -> int:
+    retry_after = response.headers.get("retry-after")
+    if retry_after:
+        try:
+            return max(1, int(float(retry_after)))
+        except ValueError:
+            pass
+
+    try:
+        body = response.json()
+        message = str(body.get("error", {}).get("message") or "")
+    except Exception:
+        message = response.text or ""
+
+    match = re.search(r"try again in\s+([0-9.]+)s", message, re.IGNORECASE)
+    if match:
+        return max(1, int(float(match.group(1))) + 1)
+
+    return 0
 
 
 def call_groq_sync(messages: list, model: str = STRATEGY_CHAT_MODEL, max_tokens: int = 1024, json_mode: bool = False, temperature: float = 0.6) -> str:
@@ -45,20 +67,18 @@ def call_groq_sync(messages: list, model: str = STRATEGY_CHAT_MODEL, max_tokens:
                     "Content-Type": "application/json",
                 },
                 json=payload,
-                timeout=45,
+                timeout=60,
                 verify=True,
             )
 
-            if response.status_code == 429:
-                # Respect retry-after header, fall back to exponential backoff
-                retry_after = int(response.headers.get("retry-after", 0))
-                wait = max(retry_after, 5 * (attempt + 1))
+            if response.status_code in (413, 429):
+                wait = max(_groq_retry_after_seconds(response), 8 * (attempt + 1))
                 if attempt < max_retries - 1:
                     time.sleep(wait)
                     continue
                 raise HTTPException(
                     status_code=429,
-                    detail="Groq rate limit reached. Please wait a moment and try again.",
+                    detail=f"Groq token limit reached. Please wait about {wait} seconds and try again.",
                 )
 
             if response.status_code != 200:
@@ -813,24 +833,35 @@ Write a thorough, executive-quality PDF report based on the above.""",
     }
 
 
+def _compact_text(value: str, max_chars: int) -> str:
+    text = " ".join(str(value or "").split())
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 1].rstrip() + "..."
+
+
+def _compact_questionnaire_answers(answers: List[AnsweredQuestion], max_items: int = 15) -> str:
+    compacted = []
+    for index, answer in enumerate(answers[:max_items], start=1):
+        question = _compact_text(answer.question, 140)
+        response = _compact_text(answer.answer, 90)
+        if question or response:
+            compacted.append(f"{index}. {question} -> {response}")
+    return "\n".join(compacted) or "No questionnaire answers provided."
+
+
 @router.post("/monetization/recommend/llm")
 def recommend_monetization_llm(
     request: AnalyzeQuestionnaireRequest,
     db: Session = Depends(get_db),
     current_user: AudienceResponse = Depends(get_current_user),
 ):
-    answer_lines = "\n".join(
-        f"- {answer.question}: {answer.answer}"
-        for answer in request.answers
-    )
-    # Fixed prompt template (see app.core.prompt_templates) — same JSON shape and
-    # a low, fixed temperature for every industry/business scenario so output
-    # structure stays consistent instead of drifting between calls.
+    answer_lines = _compact_questionnaire_answers(request.answers)
+    # Keep the prompt compact enough for Groq on-demand TPM limits. The
+    # normalizers below fill any missing optional detail, so the model does
+    # not need an oversized completion budget to return a useful result.
     messages = build_monetization_strategy_messages(request.industry, answer_lines)
-    # max_tokens raised from 6500: the modelMapping section scores all ~19
-    # catalog models (not just the recommended ones), adding meaningfully to
-    # the completion length on top of the existing four sections.
-    response_text = call_groq_sync(messages, model=STRATEGY_CHAT_MODEL, max_tokens=8500, json_mode=True, temperature=0.35)
+    response_text = call_groq_sync(messages, model=STRATEGY_CHAT_MODEL, max_tokens=4200, json_mode=True, temperature=0.35)
     payload = _extract_json_object(response_text)
     result = _normalize_recommendations(payload, request.industry)
     result["pricing"] = _normalize_pricing(payload)

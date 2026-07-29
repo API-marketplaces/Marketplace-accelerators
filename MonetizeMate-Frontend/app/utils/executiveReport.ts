@@ -143,6 +143,13 @@ export const EXEC_REPORT_STYLES = `
   .xr-advisory p { font-size: 11.5px; color: #334155; line-height: 1.55; }
   .xr-advisory strong { color: #0d9488; }
 
+  /* Distribution bar list (platform-wide stats, e.g. admin reports) */
+  .xr-bar-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; break-inside: avoid; }
+  .xr-bar-title { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 10px; }
+  .xr-bar-row { display: grid; grid-template-columns: 110px 1fr 34px; gap: 8px; align-items: center; margin-bottom: 7px; font-size: 10.5px; color: #334155; }
+  .xr-bar-track { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; display: block; }
+  .xr-bar-fill { height: 100%; display: block; border-radius: inherit; background: #0d9488; }
+
   /* Footer */
   .xr-footer { display: flex; justify-content: space-between; font-size: 9.5px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 14px; }
 `;
@@ -158,6 +165,20 @@ export function xrInfoGrid(rows: [string, string][]): string {
 
 export function xrSectionTitled(heading: string, bodyHtml: string): string {
     return `<div class="xr-section"><div class="xr-section-heading">${esc(heading)}</div>${bodyHtml}</div>`;
+}
+
+export function xrBarList(title: string, items: { label: string; percentage: number }[]): string {
+    const rows = items.slice(0, 6).map((item) => `
+        <div class="xr-bar-row">
+          <span>${esc(item.label)}</span>
+          <span class="xr-bar-track"><span class="xr-bar-fill" style="width:${Math.max(item.percentage, 4)}%"></span></span>
+          <strong>${esc(item.percentage)}%</strong>
+        </div>`).join('');
+    return `
+    <div class="xr-bar-card">
+      <div class="xr-bar-title">${esc(title)}</div>
+      ${rows || '<p style="color:#94a3b8;font-size:11px">No data yet.</p>'}
+    </div>`;
 }
 
 function esc(value: string | number | undefined | null): string {

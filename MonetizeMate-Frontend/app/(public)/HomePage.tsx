@@ -237,7 +237,7 @@ export default function HomePage() {
       <section style={{ position: 'relative', zIndex: 5, borderTop: '1px solid rgba(0,229,192,0.08)', borderBottom: '1px solid rgba(0,229,192,0.08)', padding: '40px 48px', background: 'rgba(0,229,192,0.02)' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '12px', fontWeight: '600', color: 'rgba(255,255,255,0.3)', letterSpacing: '1px', textTransform: 'uppercase' }}>Built with</span>
-          {['Next.js 16', 'FastAPI', 'PostgreSQL', 'Groq Llama 3.1', 'scikit-learn', 'pandas'].map(tech => (
+          {['Next.js 16', 'FastAPI', 'PostgreSQL', 'Monetize Mate AI', 'scikit-learn', 'pandas'].map(tech => (
             <span key={tech} style={{ fontSize: '14px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', padding: '6px 16px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '100px' }}>{tech}</span>
           ))}
         </div>
@@ -288,3 +288,4 @@ export default function HomePage() {
     </div>
   )
 }
+

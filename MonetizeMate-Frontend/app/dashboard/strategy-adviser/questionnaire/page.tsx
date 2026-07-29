@@ -168,7 +168,7 @@ function QuestionnairePageInner() {
         return (
             <LoadingAnalysis
                 title="Processing Your Responses"
-                description={`Groq is analyzing your ${selectedIndustry} business responses...`}
+                description={`Monetize Mate is analyzing your ${selectedIndustry} business responses...`}
                 steps={<QuestionnaireAnalysisSteps industry={selectedIndustry} />}
             />
         );
@@ -178,7 +178,7 @@ function QuestionnairePageInner() {
         return (
             <LoadingAnalysis
                 title="Generating Strategy Recommendations"
-                description={`Groq is turning your ${selectedIndustry} answers into ranked monetization recommendations...`}
+                description={`Monetize Mate is turning your ${selectedIndustry} answers into ranked monetization recommendations...`}
                 steps={
                     <GeneratingRecommendationsSteps
                         analysisSource="manual"
@@ -293,3 +293,4 @@ export default function QuestionnairePage() {
         </Suspense>
     );
 }
+
