@@ -3,7 +3,7 @@ name: Azure Web App CI/CD
 on:
   push:
     branches:
-      - 19052026_latest_code
+      - 29072026_latest_code
     paths:
       - 'MonetizeMate-Frontend/**'
       - '.github/workflows/azure-static-web-apps-salmon-smoke-01c830800.yml'
@@ -71,4 +71,5 @@ jobs:
           slot-name: "production"
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: MonetizeMate-Frontend/deploy
+
 
